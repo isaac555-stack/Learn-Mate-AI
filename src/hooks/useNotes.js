@@ -1,30 +1,34 @@
 import { useState, useEffect } from "react";
 
 export const useNotes = () => {
-  const [savedNotes, setSavedNotes] = useState([]);
+  // 1. LAZY INITIALIZER: Loads data immediately before the first render.
+  // This prevents the "empty array" overwrite bug on reload.
+  const [savedNotes, setSavedNotes] = useState(() => {
+    try {
+      const notes = localStorage.getItem("study_notes");
+      return notes ? JSON.parse(notes) : [];
+    } catch (error) {
+      console.error("LocalStorage load error:", error);
+      return [];
+    }
+  });
 
-  // Load notes from LocalStorage on mount
+  // 2. SYNCHRONIZED STORAGE: Watches for state changes and updates LocalStorage.
+  // This removes the need to manually call localStorage.setItem in every function.
   useEffect(() => {
-    const loadNote = () => {
-      const notes = JSON.parse(localStorage.getItem("study_notes") || "[]");
-      setSavedNotes(notes);
-    };
-    return loadNote;
-  }, []);
+    localStorage.setItem("study_notes", JSON.stringify(savedNotes));
+  }, [savedNotes]);
 
   /**
-   * Saves a new note with metadata.
-   * Prioritizes topic as the title if title is missing.
+   * Saves a new note with automatic title fallback.
    */
   const saveNote = (content, metadata) => {
-    // Ensure we don't save empty content
-    if (!content) return;
+    if (!content || content.trim() === "") return;
 
     const newNote = {
       id: Date.now(),
       content: content,
-      // FIX: If metadata.title is missing, use metadata.topic.
-      // If both are missing, use "New Study Note"
+      // Metadata Fallback logic: Title -> Topic -> Default String
       title: metadata?.title || metadata?.topic || "New Study Note",
       subject: metadata?.subject || "General",
       topic: metadata?.topic || "Revision",
@@ -35,18 +39,17 @@ export const useNotes = () => {
       }),
     };
 
-    // Update state and LocalStorage
-    const updatedNotes = [newNote, ...savedNotes];
-    setSavedNotes(updatedNotes);
-    localStorage.setItem("study_notes", JSON.stringify(updatedNotes));
+    // Functional update ensures we have the most current list
+    setSavedNotes((prev) => [newNote, ...prev]);
 
     alert(`Saved ${newNote.title} to ${newNote.subject}! 📚`);
   };
 
+  /**
+   * Deletes a note by ID.
+   */
   const deleteNote = (id) => {
-    const updated = savedNotes.filter((n) => n.id !== id);
-    setSavedNotes(updated);
-    localStorage.setItem("study_notes", JSON.stringify(updated));
+    setSavedNotes((prev) => prev.filter((note) => note.id !== id));
   };
 
   return { savedNotes, saveNote, deleteNote };
