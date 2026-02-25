@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
 
     VitePWA({
-      registerType: "autoUpdate", // This is key! It updates the app automatically.
+      registerType: "prompt", // This is key! It updates the app automatically.
       manifest: {
         name: "Learn Mate",
         short_name: "Learn Mate",
