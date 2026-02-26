@@ -1,7 +1,7 @@
 import "./App.css";
 import Scanner from "./components/Scanner";
 import ReloadPrompt from "./components/ReloadPrompt";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   return (
