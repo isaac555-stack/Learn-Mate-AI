@@ -4,7 +4,7 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_KEY);
 
 // Use current stable model versions
 const MAIN_MODEL = "gemini-2.5-flash";
-const LITE_MODEL = "gemini-2.5-flash";
+const LITE_MODEL = "gemini-2.5-flash-lite";
 
 /**
  * 1. Process Notes (Summarisation)

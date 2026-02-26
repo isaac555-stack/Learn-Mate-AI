@@ -9,7 +9,7 @@ function ReloadPrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
-      console.log("PWA Registered");
+      console.log("PWA Registered", r);
     },
   });
 
