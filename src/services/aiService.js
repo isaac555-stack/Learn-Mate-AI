@@ -46,7 +46,7 @@ export const processNotes = async (images) => {
       }));
 
     const prompt = `
-      Act as 'Oga Tutor' for a JAMB candidate. Summarise these notes in British English.
+      Act as 'A School Teacher with years of experience' for a JAMB candidate. Summarise these notes in British English.
       
       CRITICAL LAYOUT RULES:
       1. Use '##' for main titles and '###' for sub-headers.
@@ -72,7 +72,12 @@ export const processNotes = async (images) => {
 /**
  * 2. Generate Quiz
  */
-export const generateQuiz = async (content) => {
+/**
+ * Generates JAMB-standard MCQs based on provided content.
+ * @param {string} content - The text to generate questions from.
+ * @param {number} count - Number of questions to generate (default 5).
+ */
+export const generateQuiz = async (content, count = 5) => {
   try {
     const model = genAI.getGenerativeModel({
       model: LITE_MODEL,
@@ -97,8 +102,18 @@ export const generateQuiz = async (content) => {
                     type: "number",
                     description: "Index of correct option (0-3)",
                   },
+                  explanation: {
+                    type: "string",
+                    description:
+                      "A detailed explanation of why the answer is correct, referencing JAMB standards.",
+                  },
                 },
-                required: ["question", "options", "correctAnswer"],
+                required: [
+                  "question",
+                  "options",
+                  "correctAnswer",
+                  "explanation",
+                ],
               },
             },
           },
@@ -107,15 +122,28 @@ export const generateQuiz = async (content) => {
       },
     });
 
-    const prompt = `Based on these notes, generate 5 JAMB-standard MCQs in British English: ${content}`;
+    const prompt = `
+      You are an expert JAMB (Joint Admissions and Matriculation Board) examiner.
+      Task: Generate exactly ${count} JAMB-standard Multiple Choice Questions (MCQs) based on the following notes.
+      
+      Guidelines:
+      1. Language: Use strict British English (e.g., colour, programme, centre).
+      2. Quality: Ensure distractors (wrong options) are plausible and challenging.
+      3. Format: Each question must include a helpful explanation for the student.
+      4. Context: If the content is too short for ${count} questions, supplement with closely related facts from the same subject area.
+
+      Notes: ${content}
+    `;
+
     const result = await model.generateContent(prompt);
-    return JSON.parse(result.response.text()).questions;
+    const responseBody = JSON.parse(result.response.text());
+
+    return responseBody.questions || [];
   } catch (e) {
     console.error("Quiz Gen Error:", e);
     return [];
   }
 };
-
 /**
  * 3. Explain Further
  */
@@ -126,8 +154,8 @@ export const explainFurther = async (originalSummary, specificConcept) => {
       Context: ${originalSummary}
       Explain this specific part: "${specificConcept}"
       
-      Role: Oga Tutor. 
-      Format: Max 3 short sentences. Use **bold** for key terms. Use a "Pro-Tip" tone.
+      Role: Experienced Teacher. 
+      Format: Max 3 short sentences. Use **bold** for key terms. .
     `;
     const result = await model.generateContent(prompt);
     return result.response.text();

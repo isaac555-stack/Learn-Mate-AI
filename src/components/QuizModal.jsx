@@ -1,8 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Typography,
   Button,
   Stack,
@@ -10,202 +7,382 @@ import {
   LinearProgress,
   IconButton,
   Zoom,
+  Container,
+  Paper,
+  alpha,
+  Fade,
+  Chip,
 } from "@mui/material";
-import { Close, CheckCircle, Cancel, EmojiEvents } from "@mui/icons-material";
+import {
+  Close,
+  EmojiEvents,
+  Timer,
+  HistoryEdu,
+  AssignmentTurnedIn,
+  Replay,
+  LightbulbCircle,
+} from "@mui/icons-material";
 
-const QuizModal = ({ open, questions, onClose, topic }) => {
+const QuizModal = ({ open, onClose, topic, questions = [] }) => {
+  // --- Game State ---
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(40);
+  const [showReview, setShowReview] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  // Safety check: if Gemini returns empty or fails
-  if (!questions || questions.length === 0) return null;
+  const currentQuestion = questions?.[currentIdx];
 
-  const currentQuestion = questions[currentIdx];
-  const progress = (currentIdx / questions.length) * 100;
-
-  const handleSelect = (index) => {
-    if (selectedAnswer !== null) return; // Prevent clicking multiple times
-    setSelectedAnswer(index);
-    if (index === currentQuestion.correctAnswer) {
-      setScore((prev) => prev + 1);
-    }
-  };
-
-  const handleNext = () => {
+  // Handle Moving to Next Question
+  const handleNext = useCallback(() => {
     if (currentIdx < questions.length - 1) {
-      setCurrentIdx(currentIdx + 1);
+      setCurrentIdx((prev) => prev + 1);
       setSelectedAnswer(null);
+      setTimeLeft(40);
     } else {
       setIsFinished(true);
     }
+  }, [currentIdx, questions.length]);
+
+  // Timer Logic
+  useEffect(() => {
+    if (!open || isFinished || selectedAnswer !== null || showReview) return;
+
+    if (timeLeft === 0) {
+      handleSelect(-1); // Auto-fail the question on timeout
+      return;
+    }
+    const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft, open, isFinished, selectedAnswer, showReview]);
+
+  const handleSelect = (index) => {
+    if (selectedAnswer !== null) return;
+    setSelectedAnswer(index);
+
+    if (index === currentQuestion?.correctAnswer) {
+      setScore((prev) => prev + 1);
+    }
+
+    // Smooth transition to next question
+    setTimeout(handleNext, 1200);
   };
 
-  const resetAndClose = () => {
+  const resetExam = () => {
     setCurrentIdx(0);
     setSelectedAnswer(null);
     setScore(0);
+    setTimeLeft(40);
+    setShowReview(false);
     setIsFinished(false);
-    onClose();
   };
 
+  if (!open || !questions.length) return null;
+
   return (
-    <Dialog
-      open={open}
-      fullWidth
-      maxWidth="md"
-      PaperProps={{ sx: { borderRadius: 5, p: 1 } }}
-    >
-      <DialogTitle
+    <Fade in={open}>
+      <Box
         sx={{
-          fontWeight: 800,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          position: "fixed",
+          inset: 0,
+          bgcolor: "#F1F5F9",
+          zIndex: 9999,
+          overflowY: "auto",
         }}
       >
-        {isFinished ? "Quiz Results" : topic}
-        <IconButton onClick={resetAndClose} size="small">
-          <Close />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent>
-        {!isFinished ? (
-          <Box>
-            <LinearProgress
-              variant="determinate"
-              value={progress}
-              sx={{ mb: 3, borderRadius: 2, height: 8, bgcolor: "#f1f5f9" }}
-            />
-
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 700, mb: 3, lineHeight: 1.3, color: "#1e293b" }}
-            >
-              {currentQuestion.question}
-            </Typography>
-
-            <Stack spacing={1.5}>
-              {currentQuestion.options.map((option, i) => {
-                const isCorrect = i === currentQuestion.correctAnswer;
-                const isSelected = i === selectedAnswer;
-
-                let borderColor = "#e2e8f0";
-                let bgColor = "transparent";
-
-                // Logic for showing Green/Red feedback after an answer is picked
-                if (selectedAnswer !== null) {
-                  if (isCorrect) {
-                    borderColor = "#10b981";
-                    bgColor = "#ecfdf5";
-                  } else if (isSelected) {
-                    borderColor = "#ef4444";
-                    bgColor = "#fef2f2";
-                  }
-                }
-
-                return (
-                  <Button
-                    key={i}
-                    variant="outlined"
-                    fullWidth
-                    onClick={() => handleSelect(i)}
-                    sx={{
-                      py: 1.5,
-                      px: 2,
-                      borderRadius: 3,
-                      textTransform: "none",
-                      justifyContent: "flex-start",
-                      borderColor: borderColor,
-                      bgcolor: bgColor,
-                      borderWidth:
-                        isSelected || (selectedAnswer !== null && isCorrect)
-                          ? 2
-                          : 1,
-                      color: "#1e293b",
-                      "&:hover": {
-                        borderColor:
-                          selectedAnswer === null
-                            ? "primary.main"
-                            : borderColor,
-                        bgcolor: selectedAnswer === null ? "#f8fafc" : bgColor,
-                      },
-                    }}
-                  >
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      alignItems="center"
-                      sx={{ width: "100%" }}
-                    >
-                      <Typography sx={{ fontWeight: 700, mr: 1 }}>
-                        {String.fromCharCode(65 + i)}.
-                      </Typography>
-                      <Typography sx={{ flexGrow: 1, textAlign: "left" }}>
-                        {option}
-                      </Typography>
-                      {selectedAnswer !== null && isCorrect && (
-                        <CheckCircle sx={{ color: "#10b981", fontSize: 20 }} />
-                      )}
-                      {selectedAnswer !== null && isSelected && !isCorrect && (
-                        <Cancel sx={{ color: "#ef4444", fontSize: 20 }} />
-                      )}
-                    </Stack>
-                  </Button>
-                );
-              })}
-            </Stack>
-
-            <Button
-              fullWidth
-              variant="contained"
-              disabled={selectedAnswer === null}
-              onClick={handleNext}
+        {/* --- FIXED HEADER --- */}
+        <Box
+          sx={{
+            p: 2,
+            bgcolor: "white",
+            borderBottom: "1px solid #E2E8F0",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box
               sx={{
-                mt: 4,
-                py: 1.5,
-                borderRadius: 3,
-                fontWeight: 700,
-                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
+                p: 1,
+                borderRadius: 2,
+                bgcolor: alpha("#6366F1", 0.1),
+                display: "flex",
               }}
             >
-              {currentIdx === questions.length - 1
-                ? "Finish Quiz"
-                : "Next Question"}
-            </Button>
-          </Box>
-        ) : (
-          <Zoom in={true}>
-            <Box sx={{ textAlign: "center", py: 3 }}>
-              <EmojiEvents sx={{ fontSize: 80, color: "#f59e0b", mb: 2 }} />
-              <Typography
-                variant="h4"
-                sx={{ fontWeight: 900, color: "#1e293b" }}
-              >
-                {score} / {questions.length}
-              </Typography>
-              <Typography
-                sx={{ color: "#64748b", mt: 1, mb: 4, fontWeight: 500 }}
-              >
-                {score === questions.length
-                  ? "Perfect Score! You are JAMB-ready! 🔥"
-                  : "Good effort! Review the summary to get 100% next time."}
-              </Typography>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={resetAndClose}
-                sx={{ py: 1.5, borderRadius: 3, fontWeight: 700 }}
-              >
-                Back to Library
-              </Button>
+              <HistoryEdu sx={{ color: "#6366F1" }} />
             </Box>
-          </Zoom>
-        )}
-      </DialogContent>
-    </Dialog>
+            <Box>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: "#64748B",
+                  fontWeight: 700,
+                  fontSize: "0.7rem",
+                  textTransform: "uppercase",
+                }}
+              >
+                Oga Tutor CBT
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 800, color: "#0F172A", lineHeight: 1 }}
+              >
+                {topic}
+              </Typography>
+            </Box>
+          </Stack>
+          <IconButton onClick={onClose}>
+            <Close />
+          </IconButton>
+        </Box>
+
+        <Container maxWidth="md" sx={{ py: 4 }}>
+          {!isFinished ? (
+            <Box>
+              {/* Progress & Timer */}
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                sx={{ mb: 2 }}
+              >
+                <Chip
+                  label={`Question ${currentIdx + 1} of ${questions.length}`}
+                  sx={{ bgcolor: "white", fontWeight: 700 }}
+                />
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Timer
+                    sx={{
+                      color: timeLeft <= 10 ? "#EF4444" : "#6366F1",
+                      fontSize: 20,
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      fontWeight: 800,
+                      color: timeLeft <= 10 ? "#EF4444" : "#1E293B",
+                    }}
+                  >
+                    0:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
+                  </Typography>
+                </Stack>
+              </Stack>
+
+              <LinearProgress
+                variant="determinate"
+                value={((currentIdx + 1) / questions.length) * 100}
+                sx={{
+                  mb: 4,
+                  height: 8,
+                  borderRadius: 5,
+                  bgcolor: alpha("#6366F1", 0.1),
+                  "& .MuiLinearProgress-bar": { bgcolor: "#6366F1" },
+                }}
+              />
+
+              {/* Question Card */}
+              <Paper
+                sx={{
+                  p: { xs: 3, md: 5 },
+                  borderRadius: 6,
+                  border: "1px solid #E2E8F0",
+                  boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 800, mb: 4, color: "#0F172A" }}
+                >
+                  {currentQuestion?.question}
+                </Typography>
+                <Stack spacing={2}>
+                  {currentQuestion?.options.map((option, i) => {
+                    const isCorrect = i === currentQuestion.correctAnswer;
+                    const isSelected = i === selectedAnswer;
+
+                    return (
+                      <Button
+                        key={i}
+                        fullWidth
+                        onClick={() => handleSelect(i)}
+                        disabled={selectedAnswer !== null}
+                        sx={{
+                          p: 2.5,
+                          borderRadius: 4,
+                          justifyContent: "flex-start",
+                          textTransform: "none",
+                          border: "2px solid",
+                          borderColor: isSelected ? "#6366F1" : "#F1F5F9",
+                          bgcolor: isSelected
+                            ? alpha("#6366F1", 0.04)
+                            : "white",
+                          "&:hover": { bgcolor: "#F8FAFC" },
+                        }}
+                      >
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          alignItems="center"
+                          sx={{ width: "100%" }}
+                        >
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: 1.5,
+                              bgcolor: isSelected ? "#6366F1" : "#F1F5F9",
+                              color: isSelected ? "white" : "#64748B",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {String.fromCharCode(65 + i)}
+                          </Box>
+                          <Typography
+                            sx={{
+                              flexGrow: 1,
+                              fontWeight: 600,
+                              textAlign: "left",
+                              color: "#1E293B",
+                            }}
+                          >
+                            {option}
+                          </Typography>
+                        </Stack>
+                      </Button>
+                    );
+                  })}
+                </Stack>
+              </Paper>
+            </Box>
+          ) : (
+            /* --- RESULTS VIEW --- */
+            <Box>
+              {showReview ? (
+                <Zoom in={true}>
+                  <Box>
+                    <Button
+                      startIcon={<Replay />}
+                      onClick={() => setShowReview(false)}
+                      sx={{ mb: 3, fontWeight: 700 }}
+                    >
+                      Back to Result
+                    </Button>
+                    {questions.map((q, qIdx) => (
+                      <Paper
+                        key={qIdx}
+                        sx={{
+                          p: 3,
+                          mb: 3,
+                          borderRadius: 4,
+                          border: "1px solid #E2E8F0",
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          sx={{ fontWeight: 800, mb: 2 }}
+                        >
+                          {qIdx + 1}. {q.question}
+                        </Typography>
+                        <Box
+                          sx={{
+                            p: 2,
+                            bgcolor: "#F0F9FF",
+                            borderRadius: 3,
+                            border: "1px dashed #0EA5E9",
+                            display: "flex",
+                            gap: 1.5,
+                          }}
+                        >
+                          <LightbulbCircle sx={{ color: "#0EA5E9" }} />
+                          <Typography variant="body2">
+                            {q.explanation}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    ))}
+                  </Box>
+                </Zoom>
+              ) : (
+                <Zoom in={true}>
+                  <Paper
+                    sx={{
+                      p: 6,
+                      borderRadius: 8,
+                      textAlign: "center",
+                      border: "1px solid #E2E8F0",
+                    }}
+                  >
+                    <EmojiEvents
+                      sx={{ fontSize: 80, color: "#F59E0B", mb: 2 }}
+                    />
+                    <Typography
+                      variant="h2"
+                      sx={{ fontWeight: 900, color: "#1E293B" }}
+                    >
+                      {Math.round((score / questions.length) * 100)}%
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      justifyContent="center"
+                      sx={{ my: 4 }}
+                    >
+                      <Chip
+                        label={`${score} Correct`}
+                        color="success"
+                        sx={{ fontWeight: 800 }}
+                      />
+                      <Chip
+                        label={`${questions.length} Total`}
+                        sx={{ fontWeight: 800 }}
+                      />
+                    </Stack>
+                    <Stack spacing={2} sx={{ maxWidth: 300, mx: "auto" }}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        onClick={() => setShowReview(true)}
+                        startIcon={<AssignmentTurnedIn />}
+                        sx={{
+                          py: 2,
+                          borderRadius: 4,
+                          bgcolor: "#6366F1",
+                          fontWeight: 800,
+                          textTransform: "none",
+                        }}
+                      >
+                        Review Performance
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={resetExam}
+                        startIcon={<Replay />}
+                        sx={{
+                          py: 2,
+                          borderRadius: 4,
+                          fontWeight: 800,
+                          textTransform: "none",
+                        }}
+                      >
+                        Retake Exam
+                      </Button>
+                    </Stack>
+                  </Paper>
+                </Zoom>
+              )}
+            </Box>
+          )}
+        </Container>
+      </Box>
+    </Fade>
   );
 };
 

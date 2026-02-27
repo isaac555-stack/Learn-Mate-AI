@@ -32,20 +32,28 @@ const Scanner = () => {
   const { savedNotes, saveNote, deleteNote } = useNotes();
   const theme = useTheme();
 
+  // --- Quiz States ---
   const [isQuizLoading, setIsQuizLoading] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState([]);
   const [quizTopic, setQuizTopic] = useState("");
 
-  const startQuiz = async (note) => {
+  /**
+   * Refactored StartQuiz
+   * Now accepts 'count' from the LibraryTab configuration modal
+   */
+  const startQuiz = async (note, count) => {
     setIsQuizLoading(true);
     try {
-      const questions = await generateQuiz(note.content);
+      // Pass the note content AND the user-selected count to the AI service
+      const questions = await generateQuiz(note.content, count);
+
       setActiveQuiz(questions);
       setQuizTopic(note.title || note.topic || "Quiz");
       setQuizOpen(true);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to generate quiz:", err);
+      // Optional: Add a toast notification here to tell the user something went wrong
     } finally {
       setIsQuizLoading(false);
     }
@@ -58,10 +66,9 @@ const Scanner = () => {
         minHeight: "100vh",
         pb: 10,
         m: 0,
-        // Abstract organic background shapes
         backgroundImage: `
-          circle at 10% 20%, ${alpha("#6366F1", 0.05)} 0%, transparent 20%),
-          circle at 90% 80%, ${alpha("#EC4899", 0.05)} 0%, transparent 20%)
+          radial-gradient(circle at 10% 20%, ${alpha("#6366F1", 0.05)} 0%, transparent 20%),
+          radial-gradient(circle at 90% 80%, ${alpha("#EC4899", 0.05)} 0%, transparent 20%)
         `,
       }}
     >
@@ -79,7 +86,7 @@ const Scanner = () => {
           <Box sx={{ position: "relative" }}>
             <CircularProgress
               size={100}
-              sx={{ color: "#6366F1", borderRadius: "50%" }}
+              sx={{ color: "#6366F1" }}
               thickness={2}
             />
             <AutoAwesome
@@ -90,7 +97,6 @@ const Scanner = () => {
                 transform: "translate(-50%, -50%)",
                 fontSize: 40,
                 color: "#6366F1",
-                animation: "pulse 2s infinite ease-in-out",
               }}
             />
           </Box>
@@ -101,7 +107,7 @@ const Scanner = () => {
             Generating your challenge...
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Oga Tutor is analyzing your notes.
+            Oga Tutor is tailoring questions to your preferred length.
           </Typography>
         </Stack>
       </Backdrop>
@@ -130,13 +136,15 @@ const Scanner = () => {
                     setSummary(content);
                     setTab(0);
                   }}
-                  startQuiz={startQuiz}
+                  // Connect LibraryTab's internal modal to the startQuiz logic
+                  handleLaunchQuiz={startQuiz}
                 />
               </Box>
             </Fade>
           )}
         </Box>
 
+        {/* The Quiz CBT Experience */}
         {quizOpen && (
           <QuizModal
             open={quizOpen}
@@ -182,20 +190,13 @@ const HeaderSection = ({ tab, setTab }) => (
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar
             src="https://api.dicebear.com/9.x/adventurer/svg?flip=true&seed=Sara"
-            sx={{
-              width: 45,
-              height: 45,
-              border: "2px solid white",
-              // boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-            }}
+            sx={{ width: 45, height: 45, border: "2px solid white" }}
           />
-
           <Typography
             variant="h6"
             sx={{
               fontWeight: 900,
               letterSpacing: "-0.02em",
-
               display: { xs: "none", sm: "block" },
               color: "#3e4856",
             }}

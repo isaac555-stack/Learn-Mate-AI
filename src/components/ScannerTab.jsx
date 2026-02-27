@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Webcam from "react-webcam";
-
 import {
   Typography,
   Box,
@@ -38,28 +37,57 @@ import { speak, stopSpeech } from "../services/speechService";
 import { explainFurther, processNotes } from "../services/aiService";
 import { downloadNoteAsPDF } from "../services/downloadService";
 
-// --- STABLE TYPEWRITER COMPONENT ---
-const TypewriterEffect = ({ text, speed = 5 }) => {
+// --- FIXED TYPEWRITER COMPONENT ---
+const TypewriterEffect = ({ text, speed = 2 }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [isFinished, setIsFinished] = useState(false);
+  const lastTextRef = useRef("");
+  const timerRef = useRef(null);
+
+  const clearExistingTimer = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
 
   useEffect(() => {
-    setDisplayedText("");
-    setIsFinished(false);
-    let i = 0;
-    const timer = setInterval(() => {
-      setDisplayedText(text.slice(0, i));
+    if (!text) {
+      setDisplayedText("");
+      lastTextRef.current = "";
+      setIsFinished(false);
+      return;
+    }
+
+    // Determine starting point for appending new text
+    let i =
+      text.startsWith(lastTextRef.current) && lastTextRef.current !== ""
+        ? lastTextRef.current.length
+        : 0;
+
+    if (i === 0) {
+      setDisplayedText("");
+      setIsFinished(false);
+    }
+
+    clearExistingTimer();
+
+    timerRef.current = setInterval(() => {
       i++;
-      if (i > text.length) {
-        clearInterval(timer);
+      const currentSlice = text.slice(0, i);
+      setDisplayedText(currentSlice);
+      lastTextRef.current = currentSlice;
+
+      if (i >= text.length) {
+        clearExistingTimer();
         setIsFinished(true);
       }
     }, speed);
-    return () => clearInterval(timer);
+
+    return () => clearExistingTimer();
   }, [text, speed]);
 
   const handleSkip = () => {
+    clearExistingTimer();
     setDisplayedText(text);
+    lastTextRef.current = text;
     setIsFinished(true);
   };
 
@@ -68,14 +96,19 @@ const TypewriterEffect = ({ text, speed = 5 }) => {
       {!isFinished && (
         <Button
           size="small"
-          variant="text"
+          variant="contained"
           onClick={handleSkip}
           sx={{
             position: "absolute",
             right: 0,
-            top: -35,
+            top: -45,
+            zIndex: 10,
             textTransform: "none",
+            bgcolor: "white",
             color: "text.secondary",
+            borderRadius: "20px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            "&:hover": { bgcolor: "#f8fafc" },
           }}
           startIcon={<KeyboardDoubleArrowRight />}
         >
@@ -86,51 +119,74 @@ const TypewriterEffect = ({ text, speed = 5 }) => {
         sx={{
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
-          color: "#334155",
+          color: "#1f1f1f",
           lineHeight: 1.6,
-          "& h2": {
-            color: "#1e293b",
-            mt: 4,
-            mb: 2,
-            fontWeight: 800,
-            fontSize: "1.5rem",
-            borderBottom: "2px solid #f1f5f9",
-            pb: 1,
+          fontSize: "0.95rem",
+          display: "flex",
+          flexDirection: "column", // Stack items vertically
+
+          /* --- GEMINI-STYLE USER BUBBLE (ALIGNED RIGHT) --- */
+          "& blockquote": {
+            bgcolor: "#f0f4f9", // Gemini light blue-gray
+            px: "6px", // Compact
+            py: 0,
+            mx: 0,
+            my: 1.5,
+            borderRadius: "20px", // Pill shape
+            border: "none",
+            color: "#444746",
+            fontStyle: "normal",
+            alignSelf: "flex-end", // Pushes bubble to the right side
+            maxWidth: "80%", // Prevents full-width stretching
+            display: "inline-block",
+            "& p": {
+              m: 0,
+              p: 0,
+              fontWeight: 500,
+              lineHeight: 1.4,
+            },
           },
+
+          /* --- AI RESPONSE SECTION (ALIGNED LEFT) --- */
           "& h3": {
-            color: "#4f46e5",
+            color: "#1a73e8", // Google Blue
+            mt: 3,
+            mb: 1,
+            fontSize: "0.9rem",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+          },
+
+          /* --- MARKDOWN DEFAULTS --- */
+          "& h2": {
+            color: "#1f1f1f",
             mt: 3,
             mb: 1.5,
             fontWeight: 700,
-            fontSize: "1.2rem",
+            fontSize: "1.3rem",
           },
-          "& p": { mb: 2 },
-          "& ul, & ol": { mb: 2, pl: 0, listStyle: "none" },
+          "& p": { mb: 1.5, width: "100%" }, // Ensure text takes full width
           "& li": {
             display: "flex",
-            alignItems: "flex-start",
-            mb: 2,
+            mb: 0.5,
             "&::before": {
               content: '"•"',
-              color: "#0c0c0c",
-              fontWeight: "800",
-              display: "inline-block",
-              width: "1.5em",
+              color: "#1a73e8",
+              fontWeight: "bold",
+              width: "1.2em",
               flexShrink: 0,
             },
           },
-          "& li > p": { display: "inline", margin: 0 },
-          "& blockquote": {
-            mx: 0,
-            my: 3,
-            p: 2,
-            bgcolor: "#fff7ed",
-            borderLeft: "4px solid #f97316",
-            borderRadius: "0 8px 8px 0",
-            "& strong": { color: "#c2410c" },
+          "& hr": {
+            border: "none",
+            borderTop: "1px solid #f1f5f9",
+            my: 2,
+            width: "100%",
           },
-          "& hr": { my: 4, border: 0, borderTop: "2px solid #e2e8f0" },
-          "& .katex-display": { my: 2, textAlign: "center" },
         }}
       >
         <ReactMarkdown
@@ -155,6 +211,14 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
   const [metadata, setMetadata] = useState(null);
 
   const webcamRef = useRef(null);
+  const scrollRef = useRef(null);
+
+  // Auto-scroll to bottom as the "chat" grows
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [summary]);
 
   const capturePhoto = useCallback(() => {
     const imageSrc = webcamRef.current.getScreenshot();
@@ -167,7 +231,7 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
         setMetadata(null);
       }
     }
-  }, [webcamRef, summary, setSummary]);
+  }, [summary, setSummary]);
 
   const onFinishAndSummarize = async () => {
     if (pages.length === 0) return;
@@ -175,6 +239,7 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
     try {
       const result = await processNotes(pages);
       if (result) {
+        // Initial Note - Wrapped in a base container
         setSummary(result.summaryText);
         setMetadata(result.metadata);
         setPages([]);
@@ -187,16 +252,35 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
   };
 
   const handleExplain = async () => {
-    if (!userQuery.trim()) return;
+    if (!userQuery.trim() || !summary) return;
+
+    const currentQuery = userQuery;
+    setUserQuery(""); // Clear input immediately
+
+    // 1. PHASE ONE: Append the user message immediately
+    // This makes it appear on screen while the AI is still "Deep Diving"
+    const userBubble = `\n\n---\n\n> ${currentQuery}\n\n`;
+    setSummary((prev) => prev + userBubble);
+
     setIsDeepDiving(true);
+
     try {
-      const deepDive = await explainFurther(summary, userQuery);
+      // 2. PHASE TWO: Call the AI service
+      const deepDive = await explainFurther(summary, currentQuery);
+
+      // 3. PHASE THREE: Append the AI response
+      const aiResponse = `\n${deepDive}`;
+      setSummary((prev) => prev + aiResponse);
+    } catch (err) {
+      console.error("Deep dive failed", err);
+      // Optional: add an error message to the chat
       setSummary(
-        (prev) => `${prev}\n\n---\n\n### 💡 Teacher's Deep Dive\n${deepDive}`,
+        (prev) =>
+          prev +
+          "\n\n*Sorry, I had trouble processing that. Please try again.*",
       );
     } finally {
       setIsDeepDiving(false);
-      setUserQuery("");
     }
   };
 
@@ -207,7 +291,10 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
     } else {
       setIsSpeaking(true);
       try {
-        const cleanText = summary.replace(/[#*_-]/g, "").trim();
+        const cleanText = summary
+          .replace(/<[^>]*>?/gm, "")
+          .replace(/[#*_-]/g, "")
+          .trim();
         await speak(cleanText);
       } finally {
         setIsSpeaking(false);
@@ -216,8 +303,8 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
   };
 
   return (
-    <Box sx={{ width: "100%" }}>
-      {/* 1. BRANDING HEADER */}
+    <Box sx={{ width: "100%", pb: 12 }}>
+      {/* Branding Header */}
       <Stack
         direction="row"
         alignItems="center"
@@ -251,16 +338,13 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
         )}
       </Stack>
 
-      {/* 2. FULL SCREEN CAMERA PORTAL */}
+      {/* Camera Portal (logic remains the same) */}
       {isCapturing && (
         <Portal>
           <Box
             sx={{
               position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vw",
-              height: "100vh",
+              inset: 0,
               bgcolor: "#000",
               zIndex: 9999,
               display: "flex",
@@ -272,14 +356,8 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
               ref={webcamRef}
               screenshotFormat="image/jpeg"
               videoConstraints={{ facingMode: "environment" }}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
-
-            {/* Camera Controls Overlay */}
             <Box
               sx={{
                 position: "absolute",
@@ -298,7 +376,6 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
               >
                 <Close fontSize="large" />
               </IconButton>
-
               <Fab
                 color="primary"
                 onClick={capturePhoto}
@@ -312,34 +389,12 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
               >
                 <PhotoCamera sx={{ fontSize: 40 }} />
               </Fab>
-
-              {/* Placeholder for symmetry */}
-              <Box sx={{ width: 64 }} />
             </Box>
-
-            {/* Counter Badge for multiple pages */}
-            {pages.length > 0 && (
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: 40,
-                  right: 20,
-                  bgcolor: "primary.main",
-                  color: "white",
-                  px: 2,
-                  py: 1,
-                  borderRadius: 2,
-                  fontWeight: "bold",
-                }}
-              >
-                {pages.length} Pages Scanned
-              </Box>
-            )}
           </Box>
         </Portal>
       )}
 
-      {/* 3. MAIN CONTENT VIEWPORT */}
+      {/* Main Viewport */}
       <Box sx={{ minHeight: "60vh" }}>
         {isAnalyzing ? (
           <Stack alignItems="center" justifyContent="center" sx={{ py: 12 }}>
@@ -360,9 +415,27 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
                 p: { xs: 2.5, md: 4 },
                 borderRadius: 5,
                 border: "1px solid #e2e8f0",
+                bgcolor: "white",
               }}
             >
               <TypewriterEffect text={summary} />
+              <div ref={scrollRef} /> {/* Auto-scroll target */}
+              {isDeepDiving && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    mt: 2,
+                    color: "primary.main",
+                  }}
+                >
+                  <CircularProgress size={20} />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    Thinking...
+                  </Typography>
+                </Box>
+              )}
             </Paper>
           </Fade>
         ) : (
@@ -385,22 +458,24 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
               startIcon={<PhotoCamera />}
               sx={{ mt: 4, borderRadius: "12px", px: 4 }}
             >
-              {pages.length < 1 ? "Open Camera" : "Scan Multiple Pages"}
+              {pages.length < 1
+                ? "Open Camera"
+                : `Snap Page ${pages.length + 1} ?`}
             </Button>
           </Box>
         )}
       </Box>
 
-      {/* 4. DOCKING CONTROL BAR */}
+      {/* Control Bar */}
       <Box
         sx={{
           position: "fixed",
           bottom: 0,
           left: 0,
           right: 0,
-          bgcolor: "rgb(255, 255, 255)",
+          bgcolor: "rgba(255,255,255,0.9)",
           backdropFilter: "blur(12px)",
-          p: 1,
+          p: 2,
           zIndex: 1000,
           borderTop: "1px solid #f1f5f9",
         }}
@@ -438,7 +513,7 @@ const ScannerTab = ({ summary, setSummary, saveSummary }) => {
             </Stack>
           )}
 
-          <Stack direction="column" spacing={1.5}>
+          <Stack direction="column">
             <Stack direction="row" alignItems="flex-start">
               {pages.length > 0 && !summary && (
                 <Badge badgeContent={pages.length} color="error">
