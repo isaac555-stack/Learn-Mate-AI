@@ -87,9 +87,6 @@ export const processNotes = async (images) => {
       4. For lists, use '*' with blank lines between items.
       5. Use '> **JAMB Exam Alert:**' for pitfalls.
       
-      SCIENTIFIC/MATH NOTATION:
-      - Inline: $formula$
-      - Block: $$formula$$
     `;
 
     const result = await model.generateContent([prompt, ...imageParts]);
