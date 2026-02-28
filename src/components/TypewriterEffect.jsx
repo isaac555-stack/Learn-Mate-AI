@@ -141,7 +141,7 @@ const TypewriterEffect = ({ text, speed = 2 }) => {
             display: "flex",
             alignItems: "flex-start", // Ensures bullet and text align at the top
             mb: 0.5,
-            gap: 1, // Adds space between the bullet and the text
+            gap: 0.4, // Adds space between the bullet and the text
             "&::before": {
               content: '"•"',
               color: "#1a73e8",
