@@ -22,6 +22,9 @@ import {
   Replay,
   LightbulbCircle,
 } from "@mui/icons-material";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 const QuizModal = ({ open, onClose, topic, questions = [] }) => {
   // --- Game State ---
@@ -197,7 +200,13 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                   variant="h5"
                   sx={{ fontWeight: 800, mb: 4, color: "#0F172A" }}
                 >
-                  {currentQuestion?.question}
+                  <ReactMarkdown
+                    remarkPlugins={[rehypeKatex]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {" "}
+                    {currentQuestion?.question}
+                  </ReactMarkdown>
                 </Typography>
                 <Stack spacing={2}>
                   {currentQuestion?.options.map((option, i) => {
@@ -252,7 +261,13 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                               color: "#1E293B",
                             }}
                           >
-                            {option}
+                            <ReactMarkdown
+                              remarkPlugins={[rehypeKatex]}
+                              rehypePlugins={[rehypeKatex]}
+                            >
+                              {" "}
+                              {option}
+                            </ReactMarkdown>
                           </Typography>
                         </Stack>
                       </Button>

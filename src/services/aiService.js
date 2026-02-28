@@ -2,9 +2,39 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_KEY);
 
-// Use current stable model versions
+// Use current stable model versions to ensure connection stability
 const MAIN_MODEL = "gemini-2.5-flash";
-const LITE_MODEL = "gemini-2.5-flash-lite";
+const LITE_MODEL = "gemini-2.0-flash-lite";
+
+/**
+ * UTILITY: Compresses base64 images to reduce payload size
+ * This prevents ERR_CONNECTION_CLOSED by keeping the POST body small.
+ */
+const compressImage = (base64Str, maxWidth = 1024, quality = 0.7) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str.startsWith("data:")
+      ? base64Str
+      : `data:image/jpeg;base64,${base64Str}`;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = (maxWidth / width) * height;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      // Return raw base64 without the data:image/jpeg;base64, prefix
+      resolve(canvas.toDataURL("image/jpeg", quality).split(",")[1]);
+    };
+  });
+};
 
 /**
  * 1. Process Notes (Summarisation)
@@ -34,31 +64,32 @@ export const processNotes = async (images) => {
     });
 
     const imagesArray = Array.isArray(images) ? images : [images];
-    const imageParts = imagesArray
-      .filter((img) => typeof img === "string" && img.length > 500)
-      .map((base64Data) => ({
-        inlineData: {
-          data: base64Data.includes("base64,")
-            ? base64Data.split("base64,")[1]
-            : base64Data,
-          mimeType: "image/jpeg",
-        },
-      }));
+
+    // Compress all images in parallel before sending
+    const compressedImages = await Promise.all(
+      imagesArray.map((img) => compressImage(img)),
+    );
+
+    const imageParts = compressedImages.map((base64Data) => ({
+      inlineData: {
+        data: base64Data,
+        mimeType: "image/jpeg",
+      },
+    }));
 
     const prompt = `
       Act as 'A School Teacher with years of experience' for a JAMB candidate. Summarise these notes in British English.
       
       CRITICAL LAYOUT RULES:
       1. Use '##' for main titles and '###' for sub-headers.
-      2. YOU MUST use two newlines (\\n\\n) after every header and every paragraph.
-      3. Use '---' to create horizontal dividers between different concepts.
-      4. For lists, use '*' and put each item on its own line with a blank line between items.
-      5. Use '> **JAMB Exam Alert:**' for important pitfalls.
+      2. Use two newlines (\\n\\n) after every header and paragraph.
+      3. Use '---' for dividers.
+      4. For lists, use '*' with blank lines between items.
+      5. Use '> **JAMB Exam Alert:**' for pitfalls.
       
-      SCIENTIFIC/MATH NOTATION RULES:
-      - Use single dollar signs for inline formulas like $H_2SO_4$.
-      - Use double dollar signs for centered formulas on their own lines like $$V = I \\times R$$.
-      - Always ensure formulas have \\n before and after them.
+      SCIENTIFIC/MATH NOTATION:
+      - Inline: $formula$
+      - Block: $$formula$$
     `;
 
     const result = await model.generateContent([prompt, ...imageParts]);
@@ -71,11 +102,6 @@ export const processNotes = async (images) => {
 
 /**
  * 2. Generate Quiz
- */
-/**
- * Generates JAMB-standard MCQs based on provided content.
- * @param {string} content - The text to generate questions from.
- * @param {number} count - Number of questions to generate (default 5).
  */
 export const generateQuiz = async (content, count = 5) => {
   try {
@@ -92,21 +118,9 @@ export const generateQuiz = async (content, count = 5) => {
                 type: "object",
                 properties: {
                   question: { type: "string" },
-                  options: {
-                    type: "array",
-                    items: { type: "string" },
-                    minItems: 4,
-                    maxItems: 4,
-                  },
-                  correctAnswer: {
-                    type: "number",
-                    description: "Index of correct option (0-3)",
-                  },
-                  explanation: {
-                    type: "string",
-                    description:
-                      "A detailed explanation of why the answer is correct, referencing JAMB standards.",
-                  },
+                  options: { type: "array", items: { type: "string" } },
+                  correctAnswer: { type: "number" },
+                  explanation: { type: "string" },
                 },
                 required: [
                   "question",
@@ -122,28 +136,17 @@ export const generateQuiz = async (content, count = 5) => {
       },
     });
 
-    const prompt = `
-      You are an expert JAMB (Joint Admissions and Matriculation Board) examiner.
-      Task: Generate exactly ${count} JAMB-standard Multiple Choice Questions (MCQs) based on the following notes.
-      
-      Guidelines:
-      1. Language: Use strict British English (e.g., colour, programme, centre).
-      2. Quality: Ensure distractors (wrong options) are plausible and challenging.
-      3. Format: Each question must include a helpful explanation for the student.
-      4. Context: If the content is too short for ${count} questions, supplement with closely related facts from the same subject area.
-
-      Notes: ${content}
-    `;
-
+    const prompt = `Generate exactly ${count} JAMB-standard MCQs based on: ${content}`;
     const result = await model.generateContent(prompt);
     const responseBody = JSON.parse(result.response.text());
 
     return responseBody.questions || [];
   } catch (e) {
-    console.error("Quiz Gen Error:", e);
+    console.error("Quiz Generation Error:", e);
     return [];
   }
 };
+
 /**
  * 3. Explain Further
  */
@@ -152,14 +155,12 @@ export const explainFurther = async (originalSummary, specificConcept) => {
     const model = genAI.getGenerativeModel({ model: LITE_MODEL });
     const prompt = `
       Context: ${originalSummary}
-      Explain this specific part: "${specificConcept}"
-      
-      Role: Experienced Teacher. 
-      Format: Max 3 short sentences. Use **bold** for key terms. .
+      Explain: "${specificConcept}"
+      Role: Experienced Teacher. Format: Max 3 short sentences. Use **bold**.
     `;
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (e) {
-    return ("Omo, network is acting up. Please try again!", e);
+    return "Network error. Please try again!";
   }
 };

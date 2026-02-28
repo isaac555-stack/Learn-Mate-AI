@@ -48,7 +48,7 @@ const Scanner = () => {
       // Pass the note content AND the user-selected count to the AI service
       const questions = await generateQuiz(note.content, count);
 
-      setActiveQuiz(questions);
+      setActiveQuiz({ questions });
       setQuizTopic(note.title || note.topic || "Quiz");
       setQuizOpen(true);
     } catch (err) {
@@ -64,7 +64,7 @@ const Scanner = () => {
       sx={{
         bgcolor: "#F0F2F5",
         minHeight: "100vh",
-        pb: 10,
+
         m: 0,
         backgroundImage: `
           radial-gradient(circle at 10% 20%, ${alpha("#6366F1", 0.05)} 0%, transparent 20%),
@@ -89,14 +89,16 @@ const Scanner = () => {
               sx={{ color: "#6366F1" }}
               thickness={2}
             />
-            <AutoAwesome
+            <Avatar
+              src="https://api.dicebear.com/9.x/adventurer/svg?flip=true&seed=Sara"
               sx={{
+                width: 45,
+                height: 45,
+                border: "2px solid white",
                 position: "absolute",
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                fontSize: 40,
-                color: "#6366F1",
               }}
             />
           </Box>
@@ -107,14 +109,14 @@ const Scanner = () => {
             Generating your challenge...
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Oga Tutor is tailoring questions to your preferred length.
+            Oga Tutor is generating your questions.
           </Typography>
         </Stack>
       </Backdrop>
 
       <HeaderSection tab={tab} setTab={setTab} />
 
-      <Container maxWidth="md" sx={{ pt: { xs: 16, md: 16 } }}>
+      <Container maxWidth="md" sx={{ pt: { xs: 16, md: 16 }, pb: 0 }}>
         <Box sx={{ position: "relative" }}>
           {tab === 0 ? (
             <Fade in={tab === 0}>
@@ -225,7 +227,7 @@ const HeaderSection = ({ tab, setTab }) => (
               borderRadius: "12px",
               textTransform: "none",
               fontWeight: 800,
-              fontSize: "0.84rem",
+              fontSize: "0.90rem",
               color: "#64748B",
               zIndex: 1,
               "&.Mui-selected": { color: "#6366F1" },
@@ -233,12 +235,12 @@ const HeaderSection = ({ tab, setTab }) => (
           }}
         >
           <Tab
-            icon={<AutoStories sx={{ fontSize: 20 }} />}
+            icon={<AutoStories sx={{ fontSize: 30 }} />}
             iconPosition="start"
             label="Scanner"
           />
           <Tab
-            icon={<LibraryBooks sx={{ fontSize: 20 }} />}
+            icon={<LibraryBooks sx={{ fontSize: 30 }} />}
             iconPosition="start"
             label="Library"
           />

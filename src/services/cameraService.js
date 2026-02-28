@@ -10,8 +10,6 @@ export const handleCapture = async () => {
       source: CameraSource.Camera,
     });
 
-    // 2. JUST return the base64 string.
-    // Do NOT call getMultiPageSummary here!
     return photo.base64String;
   } catch (error) {
     console.error("User cancelled or camera failed", error);
