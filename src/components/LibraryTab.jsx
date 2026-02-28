@@ -184,30 +184,39 @@ const LibraryTab = ({
                   },
                 }}
               >
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Avatar
-                    sx={{
-                      bgcolor: `${style.color}15`,
-                      color: style.color,
-                      borderRadius: 3,
-                      width: 48,
-                      height: 48,
-                    }}
-                  >
-                    {style.icon}
-                  </Avatar>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                      {note.title || "Untitled Note"}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "#94a3b8" }}>
-                      {note.topic} • {note.date}
-                    </Typography>
-                  </Box>
+                <Stack direction="column" spacing={1} alignItems="flex-start">
+                  <Stack direction="row" sx={{ flexGrow: 1 }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: `${style.color}15`,
+                        color: style.color,
+                        borderRadius: 3,
+                        width: 48,
+                        height: 48,
+                      }}
+                    >
+                      {style.icon}
+                    </Avatar>
+                    <Stack
+                      direction="column"
+                      spacing={0.5}
+                      sx={{ ml: 1, flexGrow: 1 }}
+                    >
+                      {" "}
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        {note.title || "Untitled Note"}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                        {note.topic} • {note.date}
+                      </Typography>
+                    </Stack>
+                  </Stack>
                   <Stack direction="row" spacing={1}>
-                    <Tooltip title="Practice Quiz">
+                    <Tooltip
+                      title="Practice Quiz"
+                      onClick={() => openQuizSetup(note)}
+                    >
                       <IconButton
-                        onClick={() => openQuizSetup(note)}
                         sx={{
                           bgcolor: "#f0fdf4",
                           color: "#16a34a",
@@ -216,6 +225,12 @@ const LibraryTab = ({
                       >
                         <Psychology fontSize="small" />
                       </IconButton>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "#16a34a", fontWeight: 700 }}
+                      >
+                        Practice Quiz
+                      </Typography>
                     </Tooltip>
                     <Tooltip title="View Note">
                       <IconButton

@@ -27,7 +27,6 @@ import {
   Download,
   AutoFixHigh,
   HistoryEdu,
-  KeyboardDoubleArrowRight,
 } from "@mui/icons-material";
 
 import "katex/dist/katex.min.css";
@@ -35,7 +34,6 @@ import { speak, stopSpeech } from "../services/speechService";
 import { explainFurther, processNotes } from "../services/aiService";
 import { downloadNoteAsPDF } from "../services/downloadService";
 import TypewriterEffect from "./TypewriterEffect";
-
 
 // --- MAIN SCANNER COMPONENT ---
 const ScannerTab = ({ summary, setSummary, saveSummary }) => {
