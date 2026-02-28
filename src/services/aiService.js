@@ -4,7 +4,7 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_KEY);
 
 // Use current stable model versions to ensure connection stability
 const MAIN_MODEL = "gemini-2.5-flash";
-const LITE_MODEL = "gemini-2.0-flash-lite";
+const LITE_MODEL = "gemini-2.5-flash-lite";
 
 /**
  * UTILITY: Compresses base64 images to reduce payload size

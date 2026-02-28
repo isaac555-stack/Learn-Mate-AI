@@ -224,14 +224,10 @@ const LibraryTab = ({
                         }}
                       >
                         <Psychology fontSize="small" />
+                    
                       </IconButton>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "#16a34a", fontWeight: 700 }}
-                      >
-                        Practice Quiz
-                      </Typography>
                     </Tooltip>
+
                     <Tooltip title="View Note">
                       <IconButton
                         onClick={() => {
@@ -250,6 +246,7 @@ const LibraryTab = ({
                         <History fontSize="small" />
                       </IconButton>
                     </Tooltip>
+
                     <IconButton
                       onClick={() => deleteNote(note.id)}
                       sx={{ color: "#94a3b8", "&:hover": { color: "#ef4444" } }}
