@@ -78,16 +78,32 @@ export const processNotes = async (images) => {
     }));
 
     const prompt = `
-      Act as 'A School Teacher with years of experience' for a JAMB candidate. Summarise these notes in British English.
-      
-      CRITICAL LAYOUT RULES:
-      1. Use '##' for main titles and '###' for sub-headers.
-      2. Use two newlines (\\n\\n) after every header and paragraph.
-      3. Use '---' for dividers.
-      4. For lists, use '*' with blank lines between items.
-      5. Use '> **JAMB Exam Alert:**' for pitfalls.
-      
-    `;
+  Act as 'PrepFlow AI', an advanced educational strategist specialized in high-stakes exam preparation (JAMB/WAEC). 
+  Your goal is to synthesize raw data into an optimized "Mastery Guide."
+
+  TONE: 
+  Professional, analytical, and highly structured. Use clear, modern British English.
+
+  CORE OBJECTIVES:
+  1. SYNTHESIS: Distill complex notes into high-impact logical sections.
+  2. CLARITY: Use precise terminology and provide clear definitions for technical jargon.
+  3. STRATEGY: Isolate "High-Probability" topics frequently tested in competitive entrance exams.
+
+  MARKDOWN ARCHITECTURE:
+  - MAIN TOPIC: Use '# ' for the primary subject.
+  - HIERARCHY: Use '##' for sub-modules and '###' for specific laws, theories, or concepts.
+  - SEGMENTATION: Use '---' to create clean visual breaks between thematic areas.
+  - DATA POINTS: Use '*' for bullet points. Ensure 1.5 line spacing (blank lines) between items.
+  - QUANTITATIVE DATA: All mathematical models or chemical equations MUST be in LaTeX (e.g., $V = IR$).
+  - EMPHASIS: Use **Bold** for critical terms that are likely to appear in multiple-choice questions.
+
+  SPECIAL INSIGHT BOXES:
+  - Use '> **Strategic Insight:**' for conceptual shortcuts or mental models.
+  - Use '> **Exam Logic:**' to highlight specific patterns in past questions or common distractor (wrong) options.
+
+  OUTPUT FORMAT:
+  Return the response as a JSON object. The 'summaryText' field must contain the formatted Markdown string.
+`;
 
     const result = await model.generateContent([prompt, ...imageParts]);
     return JSON.parse(result.response.text());
@@ -136,7 +152,7 @@ export const generateQuiz = async (content, count = 5) => {
     const prompt = `Generate exactly ${count} JAMB-standard MCQs based on: ${content}`;
     const result = await model.generateContent(prompt);
     const responseBody = JSON.parse(result.response.text());
-
+    console.log("Generated Quiz Questions:", responseBody.questions);
     return responseBody.questions || [];
   } catch (e) {
     console.error("Quiz Generation Error:", e);
@@ -149,15 +165,36 @@ export const generateQuiz = async (content, count = 5) => {
  */
 export const explainFurther = async (originalSummary, specificConcept) => {
   try {
-    const model = genAI.getGenerativeModel({ model: LITE_MODEL });
+    const model = genAI.getGenerativeModel({
+      model: LITE_MODEL,
+      generationConfig: {
+        temperature: 0.4, // Keep it focused and factual
+        maxOutputTokens: 150,
+      },
+    });
+
     const prompt = `
-      Context: ${originalSummary}
-      Explain: "${specificConcept}"
-      Role: Experienced Teacher. Format: Max 3 short sentences. Use **bold**.
+      You are an Academic Strategist. 
+      Contextual Reference: "${originalSummary}"
+      Target Concept: "${specificConcept}"
+
+      Task: Provide a high-density, 3-sentence explanation of this concept. 
+      
+      Requirements:
+      1. Sentence 1: Define the concept clearly within the provided context.
+      2. Sentence 2: Explain the underlying logic or "why" it matters.
+      3. Sentence 3: Give a concrete example or a quick exam-day mnemonic.
+      
+      Style: Use **bold** for key terms. Avoid conversational filler like "Sure" or "I can explain."
     `;
+
     const result = await model.generateContent(prompt);
-    return result.response.text();
+    const response = result.response.text();
+
+    // Small cleanup to ensure no AI "chatter" made it through
+    return response.trim();
   } catch (e) {
-    return "Network error. Please try again!";
+    console.error("Explanation Error:", e);
+    return "Unable to fetch explanation. Please check your connection.";
   }
 };

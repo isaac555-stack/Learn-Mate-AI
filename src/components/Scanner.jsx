@@ -20,6 +20,7 @@ import {
   School,
   AutoAwesome,
 } from "@mui/icons-material";
+import HeaderSection from "./HeaderSection";
 import ScannerTab from "./ScannerTab";
 import LibraryTab from "./LibraryTab";
 import QuizModal from "./QuizModal";
@@ -42,23 +43,23 @@ const Scanner = () => {
    * Refactored StartQuiz
    * Now accepts 'count' from the LibraryTab configuration modal
    */
+  // --- Inside startQuiz in Scanner.jsx ---
   const startQuiz = async (note, count) => {
     setIsQuizLoading(true);
     try {
-      // Pass the note content AND the user-selected count to the AI service
       const questions = await generateQuiz(note.content, count);
 
-      setActiveQuiz({ questions });
+      // FIX: Set the array directly so QuizModal can map through it
+      setActiveQuiz(questions);
       setQuizTopic(note.title || note.topic || "Quiz");
       setQuizOpen(true);
     } catch (err) {
       console.error("Failed to generate quiz:", err);
-      // Optional: Add a toast notification here to tell the user something went wrong
+      // Peer tip: Always good to reset loading even on error
     } finally {
       setIsQuizLoading(false);
     }
   };
-
   return (
     <Box
       sx={{
@@ -106,17 +107,17 @@ const Scanner = () => {
             variant="h5"
             sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}
           >
-            Generating your challenge...
+            Analyzing content...
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Oga Tutor is generating your questions.
+            PrepFlow AI is generating your questions.
           </Typography>
         </Stack>
       </Backdrop>
 
       <HeaderSection tab={tab} setTab={setTab} />
 
-      <Container maxWidth="md" sx={{ pt: { xs: 16, md: 16 }, pb: 0 }}>
+      <Container maxWidth="md" sx={{ pt: { xs: 14, md: 16 }, pb: 0 }}>
         <Box sx={{ position: "relative" }}>
           {tab === 0 ? (
             <Fade in={tab === 0}>
@@ -150,104 +151,17 @@ const Scanner = () => {
         {quizOpen && (
           <QuizModal
             open={quizOpen}
-            questions={activeQuiz}
+            questions={activeQuiz} // activeQuiz is now the array [{}, {}, ...]
             topic={quizTopic}
-            onClose={() => setQuizOpen(false)}
+            onClose={() => {
+              setQuizOpen(false);
+              setActiveQuiz([]); // Clear quiz when closed to free up memory
+            }}
           />
         )}
       </Container>
     </Box>
   );
 };
-
-const HeaderSection = ({ tab, setTab }) => (
-  <Box
-    sx={{
-      position: "fixed",
-      top: { xs: 15, md: 30 },
-      left: "50%",
-      transform: "translateX(-50%)",
-      width: { xs: "90%", md: "700px" },
-      zIndex: 1200,
-    }}
-  >
-    <Paper
-      elevation={0}
-      sx={{
-        p: 1.5,
-        borderRadius: "24px",
-        background: "rgba(255, 255, 255, 0.9)",
-        backdropFilter: "blur(10px)",
-        border: "1px solid rgba(255, 255, 255, 0.3)",
-        boxShadow: "0 20px 40px rgba(0,0,0,0.05)",
-      }}
-    >
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        spacing={2}
-        sx={{ px: 1 }}
-      >
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Avatar
-            src="https://api.dicebear.com/9.x/adventurer/svg?flip=true&seed=Sara"
-            sx={{ width: 45, height: 45, border: "2px solid white" }}
-          />
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 900,
-              letterSpacing: "-0.02em",
-              display: { xs: "none", sm: "block" },
-              color: "#3e4856",
-            }}
-          >
-            Learn Mate
-          </Typography>
-        </Stack>
-
-        <Tabs
-          value={tab}
-          onChange={(e, v) => setTab(v)}
-          centered
-          sx={{
-            bgcolor: "#F1F5F9",
-            borderRadius: "16px",
-            p: 0.5,
-            minHeight: "44px",
-            "& .MuiTabs-indicator": {
-              height: "100%",
-              borderRadius: "12px",
-              bgcolor: "white",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-            },
-            "& .MuiTab-root": {
-              minHeight: "40px",
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 800,
-              fontSize: "0.90rem",
-              color: "#64748B",
-              zIndex: 1,
-              "&.Mui-selected": { color: "#6366F1" },
-            },
-          }}
-        >
-          <Tab
-            icon={<AutoStories sx={{ fontSize: 30 }} />}
-            iconPosition="start"
-            label="Scanner"
-          />
-          <Tab
-            icon={<LibraryBooks sx={{ fontSize: 30 }} />}
-            iconPosition="start"
-            label="Library"
-          />
-        </Tabs>
-      </Stack>
-    </Paper>
-  </Box>
-);
 
 export default Scanner;

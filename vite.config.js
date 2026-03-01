@@ -5,34 +5,48 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   plugins: [
     react(),
-
     VitePWA({
-      registerType: "prompt", // This is key! It updates the app automatically.
+      registerType: "autoUpdate",
+      includeAssets: [
+        "favicon.ico",
+        "apple-touch-icon.png",
+        "PrepFlowMaskable512.png",
+      ],
       manifest: {
-        name: "Learn Mate",
-        short_name: "Learn Mate",
-        description: "AI Study Assistant for WAEC & JAMB",
+        name: "PrepFlow AI",
+        short_name: "PrepFlow",
+        description: "Advanced AI Study Assistant for JAMB & WAEC",
         theme_color: "#6366F1",
         background_color: "#ffffff",
-        display: "standalone", // Makes it look like a real app (no browser bar)
+        display: "standalone",
+        orientation: "portrait",
         icons: [
           {
-            src: "pwa-192x192.png",
+            src: "PrepFlowIcon192x192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any",
           },
           {
-            src: "pwa-512x512.png",
+            src: "PrepFlowIcon512x512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any",
+          },
+          {
+            // THIS FIXES THE WHITE BOX
+            src: "PrepFlowMaskable512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
           },
         ],
       },
     }),
   ],
   server: {
-    allowedHosts: true, // Allows ngrok to proxy the request
-    host: true, // Exposes the server on your local network
-    port: 5173, // Ensure this matches your ngrok command
+    allowedHosts: true,
+    host: true,
+    port: 5173,
   },
 });

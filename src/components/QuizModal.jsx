@@ -21,13 +21,15 @@ import {
   AssignmentTurnedIn,
   Replay,
   LightbulbCircle,
+  CheckCircle,
+  Cancel,
 } from "@mui/icons-material";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css"; // Ensure LaTeX styles are active
 
 const QuizModal = ({ open, onClose, topic, questions = [] }) => {
-  // --- Game State ---
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [score, setScore] = useState(0);
@@ -37,7 +39,6 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
 
   const currentQuestion = questions?.[currentIdx];
 
-  // Handle Moving to Next Question
   const handleNext = useCallback(() => {
     if (currentIdx < questions.length - 1) {
       setCurrentIdx((prev) => prev + 1);
@@ -48,29 +49,32 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
     }
   }, [currentIdx, questions.length]);
 
+  const handleSelect = useCallback(
+    (index) => {
+      if (selectedAnswer !== null) return;
+      setSelectedAnswer(index);
+
+      if (index === currentQuestion?.correctAnswer) {
+        setScore((prev) => prev + 1);
+      }
+
+      // Delay to let user see if they were right/wrong
+      setTimeout(handleNext, 1500);
+    },
+    [selectedAnswer, currentQuestion, handleNext],
+  );
+
   // Timer Logic
   useEffect(() => {
     if (!open || isFinished || selectedAnswer !== null || showReview) return;
 
     if (timeLeft === 0) {
-      handleSelect(-1); // Auto-fail the question on timeout
+      handleSelect(-1);
       return;
     }
     const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, open, isFinished, selectedAnswer, showReview]);
-
-  const handleSelect = (index) => {
-    if (selectedAnswer !== null) return;
-    setSelectedAnswer(index);
-
-    if (index === currentQuestion?.correctAnswer) {
-      setScore((prev) => prev + 1);
-    }
-
-    // Smooth transition to next question
-    setTimeout(handleNext, 1200);
-  };
+  }, [timeLeft, open, isFinished, selectedAnswer, showReview, handleSelect]);
 
   const resetExam = () => {
     setCurrentIdx(0);
@@ -94,7 +98,7 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
           overflowY: "auto",
         }}
       >
-        {/* --- FIXED HEADER --- */}
+        {/* HEADER */}
         <Box
           sx={{
             p: 2,
@@ -129,7 +133,7 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                   textTransform: "uppercase",
                 }}
               >
-                Oga Tutor CBT
+                PrepFlow AI
               </Typography>
               <Typography
                 variant="h6"
@@ -147,7 +151,6 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
         <Container maxWidth="md" sx={{ py: 4 }}>
           {!isFinished ? (
             <Box>
-              {/* Progress & Timer */}
               <Stack
                 direction="row"
                 justifyContent="space-between"
@@ -187,7 +190,6 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                 }}
               />
 
-              {/* Question Card */}
               <Paper
                 sx={{
                   p: { xs: 3, md: 5 },
@@ -198,20 +200,33 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
               >
                 <Typography
                   variant="h5"
+                  component="div"
                   sx={{ fontWeight: 800, mb: 4, color: "#0F172A" }}
                 >
                   <ReactMarkdown
-                    remarkPlugins={[rehypeKatex]}
+                    remarkPlugins={[remarkMath]}
                     rehypePlugins={[rehypeKatex]}
                   >
-                    {" "}
                     {currentQuestion?.question}
                   </ReactMarkdown>
                 </Typography>
+
                 <Stack spacing={2}>
                   {currentQuestion?.options.map((option, i) => {
                     const isCorrect = i === currentQuestion.correctAnswer;
                     const isSelected = i === selectedAnswer;
+
+                    // Determine Button Color based on state
+                    let btnBorder = "#F1F5F9";
+                    let btnBg = "white";
+                    if (isSelected) {
+                      btnBorder = isCorrect ? "#10B981" : "#EF4444";
+                      btnBg = isCorrect
+                        ? alpha("#10B981", 0.05)
+                        : alpha("#EF4444", 0.05);
+                    } else if (selectedAnswer !== null && isCorrect) {
+                      btnBorder = "#10B981"; // Highlight correct answer if user was wrong
+                    }
 
                     return (
                       <Button
@@ -225,10 +240,9 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                           justifyContent: "flex-start",
                           textTransform: "none",
                           border: "2px solid",
-                          borderColor: isSelected ? "#6366F1" : "#F1F5F9",
-                          bgcolor: isSelected
-                            ? alpha("#6366F1", 0.04)
-                            : "white",
+                          borderColor: btnBorder,
+                          bgcolor: btnBg,
+                          transition: "0.2s all ease",
                           "&:hover": { bgcolor: "#F8FAFC" },
                         }}
                       >
@@ -243,7 +257,11 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                               width: 32,
                               height: 32,
                               borderRadius: 1.5,
-                              bgcolor: isSelected ? "#6366F1" : "#F1F5F9",
+                              bgcolor: isSelected
+                                ? isCorrect
+                                  ? "#10B981"
+                                  : "#EF4444"
+                                : "#F1F5F9",
                               color: isSelected ? "white" : "#64748B",
                               display: "flex",
                               alignItems: "center",
@@ -251,7 +269,15 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                               fontWeight: 800,
                             }}
                           >
-                            {String.fromCharCode(65 + i)}
+                            {isSelected ? (
+                              isCorrect ? (
+                                <CheckCircle fontSize="small" />
+                              ) : (
+                                <Cancel fontSize="small" />
+                              )
+                            ) : (
+                              String.fromCharCode(65 + i)
+                            )}
                           </Box>
                           <Typography
                             sx={{
@@ -262,10 +288,9 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                             }}
                           >
                             <ReactMarkdown
-                              remarkPlugins={[rehypeKatex]}
+                              remarkPlugins={[remarkMath]}
                               rehypePlugins={[rehypeKatex]}
                             >
-                              {" "}
                               {option}
                             </ReactMarkdown>
                           </Typography>
@@ -277,7 +302,6 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
               </Paper>
             </Box>
           ) : (
-            /* --- RESULTS VIEW --- */
             <Box>
               {showReview ? (
                 <Zoom in={true}>
@@ -303,7 +327,13 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                           variant="subtitle1"
                           sx={{ fontWeight: 800, mb: 2 }}
                         >
-                          {qIdx + 1}. {q.question}
+                          {qIdx + 1}.{" "}
+                          <ReactMarkdown
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                          >
+                            {q.question}
+                          </ReactMarkdown>
                         </Typography>
                         <Box
                           sx={{
