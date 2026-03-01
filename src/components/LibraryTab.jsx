@@ -105,7 +105,16 @@ const LibraryTab = ({
     return matchesFilter && matchesSearch;
   });
 
-  const openQuizSetup = (note) => {
+  // --- FIX: Define the missing function ---
+  const handleOpenNote = (note) => {
+    // 1. Update the summary state with the saved note's content
+    setSummary(note.content);
+    // 2. Switch the tab back to the Scanner/Study view
+    setTab(0);
+  };
+
+  const openQuizSetup = (e, note) => {
+    e.stopPropagation(); // Prevent the Paper onClick (opening the note) from firing
     setActiveNote(note);
     setSetupOpen(true);
   };
@@ -117,7 +126,7 @@ const LibraryTab = ({
 
   return (
     <Box sx={{ pb: 6, mt: 2 }}>
-      {/* Search Bar - Floating Pill Design */}
+      {/* Search Bar */}
       <Paper
         elevation={0}
         sx={{
@@ -161,9 +170,9 @@ const LibraryTab = ({
       {/* Subject Filter Chips */}
       <Box
         sx={{
-          mb: 4,
           overflowX: "auto",
           py: 1,
+          mb: 3,
           "&::-webkit-scrollbar": { display: "none" },
         }}
       >
@@ -193,19 +202,16 @@ const LibraryTab = ({
 
       {/* Library Grid/List */}
       {filteredNotes.length > 0 ? (
-        <Stack spacing={2}>
+        <Stack direction="column" spacing={2}>
           {filteredNotes.map((note) => {
             const style = getSubjectStyle(note.subject);
             return (
               <Fade in key={note.id}>
                 <Paper
                   elevation={0}
-                  onClick={() => {
-                    setSummary(note.content);
-                    setTab(0);
-                  }}
+                  onClick={() => handleOpenNote(note)}
                   sx={{
-                    p: 2.5,
+                    p: 2,
                     borderRadius: "24px",
                     bgcolor: "white",
                     border: "1px solid #f1f5f9",
@@ -213,90 +219,100 @@ const LibraryTab = ({
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                     display: "flex",
                     alignItems: "center",
+                    justifyContent: "space-between",
                     gap: 2,
                     "&:hover": {
                       transform: "translateY(-4px)",
                       boxShadow: "0 12px 24px rgba(0,0,0,0.04)",
-                      borderColor: alpha(style.color, 0.3),
-                      "& .note-arrow": {
-                        transform: "translateX(5px)",
-                        opacity: 1,
-                      },
+                      borderColor: alpha(style.color, 0.4),
                     },
                   }}
                 >
-                  <Avatar
+                  <Box
                     sx={{
-                      bgcolor: style.bg,
-                      color: style.color,
-                      width: 56,
-                      height: 56,
-                      borderRadius: "18px",
-                      fontSize: "1.8rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      flexGrow: 1,
                     }}
                   >
-                    {style.icon}
-                  </Avatar>
-
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography
-                      variant="h6"
+                    <Avatar
                       sx={{
-                        fontSize: "1rem",
-                        fontWeight: 900,
-                        color: "#1E293B",
+                        bgcolor: style.bg,
+                        color: style.color,
+                        width: 52,
+                        height: 52,
+                        borderRadius: "16px",
+                        fontSize: "1.5rem",
                       }}
                     >
-                      {note.title || "Quick Scan"}
-                    </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center">
+                      {style.icon}
+                    </Avatar>
+
+                    <Box>
                       <Typography
-                        variant="caption"
-                        sx={{ fontWeight: 800, color: style.color }}
-                      >
-                        {note.subject}
-                      </Typography>
-                      <Box
+                        variant="subtitle1"
                         sx={{
-                          width: 3,
-                          height: 3,
-                          bgcolor: "#cbd5e1",
-                          borderRadius: "50%",
+                          fontSize: "0.95rem",
+                          fontWeight: 800,
+                          color: "#1E293B",
+                          lineHeight: 1.2,
+                          mb: 0.5,
                         }}
-                      />
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "#94a3b8", fontWeight: 600 }}
                       >
-                        {note.date}
+                        {note.title || "Quick Scan"}
                       </Typography>
-                    </Stack>
+
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 800,
+                            color: style.color,
+                            bgcolor: alpha(style.color, 0.1),
+                            px: 1,
+                            borderRadius: "6px",
+                          }}
+                        >
+                          {note.subject}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "#94a3b8", fontWeight: 600 }}
+                        >
+                          {note.date}
+                        </Typography>
+                      </Stack>
+                    </Box>
                   </Box>
 
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Tooltip title="Quiz Me">
+                  <Stack direction="row" spacing={1}>
+                    <Tooltip title="AI Quiz">
                       <IconButton
-                        onClick={() => openQuizSetup(note)}
+                        size="small"
+                        onClick={(e) => openQuizSetup(e, note)}
                         sx={{
                           bgcolor: alpha("#6366F1", 0.05),
                           color: "#6366F1",
                           "&:hover": { bgcolor: "#6366F1", color: "#fff" },
+                          transition: "0.2s",
                         }}
                       >
                         <AutoAwesome fontSize="small" />
                       </IconButton>
                     </Tooltip>
+
                     <IconButton
-                      onClick={() => deleteNote(note.id)}
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNote(note.id);
+                      }}
                       sx={{
                         color: "#cbd5e1",
                         "&:hover": {
                           color: "#ef4444",
-                          bgcolor: alpha("#ef4444", 0.05),
+                          bgcolor: alpha("#ef4444", 0.08),
                         },
                       }}
                     >
@@ -309,12 +325,12 @@ const LibraryTab = ({
           })}
         </Stack>
       ) : (
-        <Box sx={{ textAlign: "center", py: 12 }}>
+        <Box sx={{ textAlign: "center", mt: 8 }}>
           <Box
             sx={{
               width: 100,
               height: 100,
-              bgcolor: "#f1f5f9",
+              bgcolor: "#FFFFFF",
               borderRadius: "50%",
               display: "flex",
               alignItems: "center",
@@ -325,7 +341,7 @@ const LibraryTab = ({
           >
             <MenuBook sx={{ fontSize: 40, color: "#cbd5e1" }} />
           </Box>
-          <Typography variant="h6" sx={{ color: "#1e293b", fontWeight: 800 }}>
+          <Typography variant="h5" sx={{ color: "#1e293b", fontWeight: 800 }}>
             Your shelf is empty
           </Typography>
           <Typography variant="body2" sx={{ color: "#64748b" }}>
