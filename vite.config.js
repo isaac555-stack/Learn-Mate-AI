@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: [
         "favicon.ico",
         "apple-touch-icon.png",
@@ -22,20 +22,20 @@ export default defineConfig({
         orientation: "portrait",
         icons: [
           {
-            src: "PrepFlowIcon192x192.png",
+            src: "/PrepFlowIcon192x192.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "PrepFlowIcon512x512.png",
+            src: "/PrepFlowIcon512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any",
           },
           {
             // THIS FIXES THE WHITE BOX
-            src: "PrepFlowMaskable512.png",
+            src: "/PrepFlowMaskable512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
