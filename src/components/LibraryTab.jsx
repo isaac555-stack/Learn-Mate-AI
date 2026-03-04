@@ -143,7 +143,7 @@ const LibraryTab = ({
         <TextField
           fullWidth
           variant="standard"
-          placeholder="Search by topic, subject or date..."
+          placeholder="Search by topic, subject..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
@@ -253,14 +253,15 @@ const LibraryTab = ({
                       <Typography
                         variant="subtitle1"
                         sx={{
-                          fontSize: "0.95rem",
+                          fontSize: "0.85rem",
                           fontWeight: 800,
                           color: "#1E293B",
                           lineHeight: 1.2,
                           mb: 0.5,
                         }}
                       >
-                        {note.title || "Quick Scan"}
+                        {note.title.trim().slice(0, 14) + "...." ||
+                          "Quick Scan"}
                       </Typography>
 
                       <Stack direction="row" spacing={1} alignItems="center">
@@ -356,9 +357,10 @@ const LibraryTab = ({
         onClose={() => setSetupOpen(false)}
         PaperProps={{
           sx: {
+            mx: 2,
             borderRadius: "32px",
             p: 2,
-            maxWidth: 400,
+            maxWidth: 450,
             boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
           },
         }}
@@ -384,7 +386,7 @@ const LibraryTab = ({
 
         <Box sx={{ p: 1 }}>
           <Typography variant="body2" sx={{ color: "#64748B", mb: 3 }}>
-            Select question density for <b>{activeNote?.title}</b>. PrepFlow AI
+            Select question density for <b>{activeNote?.title}</b>. PrepFlow
             will simulate JAMB/WAEC patterns.
           </Typography>
 
@@ -441,7 +443,7 @@ const LibraryTab = ({
               "&:hover": { bgcolor: "#4f46e5" },
             }}
           >
-            Generate AI Quiz
+            Generate Quiz
           </Button>
         </Box>
       </Dialog>

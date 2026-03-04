@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Typography,
   Paper,
@@ -46,10 +45,11 @@ const HeaderSection = ({ tab, setTab }) => (
           <Box sx={{ position: "relative" }}>
             <Avatar
               // Using a cleaner profile look or your actual logo
-              src="https://api.dicebear.com/9.x/adventurer/svg?seed=Sara&backgroundColor=b6e3f4&flip=true"
+              src="https://api.dicebear.com/9.x/adventurer/svg?seed=Sara&flip=true"
               sx={{
                 width: 42,
                 height: 42,
+                bgcolor: "#6365f100",
                 border: "2px solid #fff",
                 boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
               }}
@@ -81,7 +81,7 @@ const HeaderSection = ({ tab, setTab }) => (
               WebkitTextFillColor: "transparent",
             }}
           >
-            PrepFlow AI
+            PrepFlow
           </Typography>
         </Stack>
 
@@ -106,27 +106,23 @@ const HeaderSection = ({ tab, setTab }) => (
               borderRadius: "20px",
               textTransform: "none",
               fontWeight: 700,
-              fontSize: "0.85rem",
+              fontSize: "0.90rem",
               color: "#64748B",
-              transition: "0.2s",
               zIndex: 1,
               gap: 1,
               "&.Mui-selected": {
                 color: "#6366F1",
               },
-              "&:hover": {
-                color: "#475569",
-              },
             },
           }}
         >
           <Tab
-            icon={<AutoAwesome sx={{ fontSize: 20 }} />} // "Sparkle" icon for AI Scanner
+            icon={<AutoAwesome sx={{ fontSize: 15 }} />} // "Sparkle" icon for AI Scanner
             iconPosition="start"
             label="Scanner"
           />
           <Tab
-            icon={<LibraryBooks sx={{ fontSize: 20 }} />}
+            icon={<LibraryBooks sx={{ fontSize: 15 }} />}
             iconPosition="start"
             label="Library"
           />

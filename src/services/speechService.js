@@ -7,7 +7,7 @@ import { Capacitor } from "@capacitor/core";
 const prepareNaijaText = (text) => {
   return text
     .replace(/[#*$_/-]/g, "") // Remove Markdown
-    .replace(/\bwaec\b/gi, "W-A-E-C")
+    .replace(/\bwaec\b/gi, "WAEC")
     .replace(/\bjamb\b/gi, "JAMB")
     .replace(/\bto\b/gi, "to")
     .replace(/\bna\b/gi, "nah")

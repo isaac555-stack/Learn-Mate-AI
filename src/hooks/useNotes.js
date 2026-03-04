@@ -34,8 +34,8 @@ export const useNotes = () => {
       topic: metadata?.topic || "Revision",
       date: new Date().toLocaleDateString("en-NG", {
         day: "numeric",
-        month: "short",
-        year: "numeric",
+        month: "numeric",
+        year: "2-digit",
       }),
     };
 

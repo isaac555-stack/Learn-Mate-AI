@@ -8,7 +8,7 @@ function App() {
     <div>
       <Analytics />
       <ReloadPrompt></ReloadPrompt>
-      <Scanner></Scanner>;
+      <Scanner></Scanner>
     </div>
   );
 }

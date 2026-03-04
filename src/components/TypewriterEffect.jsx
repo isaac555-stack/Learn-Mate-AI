@@ -1,15 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Box, Button, Typography } from "@mui/material";
-import { KeyboardDoubleArrowRight } from "@mui/icons-material";
+import { Box, Button, Typography, alpha } from "@mui/material";
+import { KeyboardDoubleArrowRight, AutoAwesome } from "@mui/icons-material";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css"; // Ensure LaTeX styles are loaded
+import "katex/dist/katex.min.css";
 
-const TypewriterEffect = ({ text, speed = 5 }) => {
+const TypewriterEffect = ({ text, speed = 10 }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [isFinished, setIsFinished] = useState(false);
-  const lastTextRef = useRef("");
   const timerRef = useRef(null);
 
   const clearExistingTimer = () => {
@@ -19,91 +18,122 @@ const TypewriterEffect = ({ text, speed = 5 }) => {
   useEffect(() => {
     if (!text) {
       setDisplayedText("");
-      lastTextRef.current = "";
       setIsFinished(false);
       return;
     }
 
-    // Smart appending: finds where the new text differs from the old to avoid flickering
-    let i =
-      text.startsWith(lastTextRef.current) && lastTextRef.current !== ""
-        ? lastTextRef.current.length
-        : 0;
+    // 1. APPEND LOGIC: If the new text is just an extension of what's already there,
+    // don't clear the screen. Start typing from the last known length.
+    if (text.startsWith(displayedText) && displayedText !== "") {
+      setIsFinished(false);
+      clearExistingTimer();
 
-    if (i === 0) {
+      let i = displayedText.length;
+
+      timerRef.current = setInterval(() => {
+        if (i < text.length) {
+          // Keep it snappy: increment by 3 for long strings, 1 for short
+          const increment = text.length - i > 500 ? 3 : 1;
+          i += increment;
+          setDisplayedText(text.slice(0, i));
+        } else {
+          setDisplayedText(text);
+          clearExistingTimer();
+          setIsFinished(true);
+        }
+      }, speed);
+    }
+    // 2. FRESH START LOGIC: If it's a completely new scan or reset
+    else {
       setDisplayedText("");
       setIsFinished(false);
+      clearExistingTimer();
+
+      let i = 0;
+      timerRef.current = setInterval(() => {
+        if (i < text.length) {
+          const increment = text.length > 500 ? 3 : 1;
+          i += increment;
+          setDisplayedText(text.slice(0, i));
+        } else {
+          setDisplayedText(text);
+          clearExistingTimer();
+          setIsFinished(true);
+        }
+      }, speed);
     }
 
-    clearExistingTimer();
-
-    timerRef.current = setInterval(() => {
-      if (i < text.length) {
-        i++;
-        const currentSlice = text.slice(0, i);
-        setDisplayedText(currentSlice);
-        lastTextRef.current = currentSlice;
-      } else {
-        clearExistingTimer();
-        setIsFinished(true);
-      }
-    }, speed);
-
     return () => clearExistingTimer();
-  }, [text, speed]);
+  }, [text]); // Triggered whenever text prop updates
 
   const handleSkip = () => {
     clearExistingTimer();
     setDisplayedText(text);
-    lastTextRef.current = text;
     setIsFinished(true);
   };
 
   return (
-    <Box sx={{ position: "relative", minHeight: "100px", mt: 2 }}>
-      {/* Skip Button */}
-      {!isFinished && displayedText.length > 10 && (
+    <Box sx={{ position: "relative", minHeight: "100px" }}>
+      {!isFinished && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            mb: 2,
+            color: "primary.main",
+            animation: "pulse 2s infinite",
+          }}
+        >
+          <AutoAwesome sx={{ fontSize: 16 }} />
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, letterSpacing: 1 }}
+          >
+            FORMATTING...
+          </Typography>
+        </Box>
+      )}
+
+      {!isFinished && displayedText.length > 20 && (
         <Button
           size="small"
           onClick={handleSkip}
-          startIcon={<KeyboardDoubleArrowRight />}
+          endIcon={<KeyboardDoubleArrowRight />}
           sx={{
             position: "absolute",
             right: 0,
-            top: -40,
+            top: -45,
             zIndex: 10,
+            borderRadius: "12px",
             textTransform: "none",
-            bgcolor: "rgba(255, 255, 255, 0.9)",
-            color: "text.secondary",
-            borderRadius: "20px",
-            fontSize: "0.75rem",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-            "&:hover": { bgcolor: "#f8fafc" },
+            fontWeight: 700,
+            bgcolor: alpha("#6366F1", 0.05),
+            color: "#6366F1",
+            "&:hover": { bgcolor: alpha("#6366F1", 0.1) },
           }}
         >
           Skip
         </Button>
       )}
 
-      {/* Markdown Content Area */}
       <Box
         sx={{
-          color: "#1f1f1f",
           lineHeight: 1.7,
-          fontSize: "0.95rem",
+          fontSize: "1.0rem",
           display: "flex",
           flexDirection: "column",
 
           /* --- 1. USER QUESTION BUBBLE (BLOCKQUOTE) --- */
           "& blockquote": {
-            bgcolor: "#f0f4f9",
+            bgcolor: "#E9EEF6",
             px: 2.5,
             py: 1.5,
             mx: 0,
             my: 2,
-            borderRadius: "24px 24px 4px 24px", // Chat bubble shape
+            borderRadius: "24px 24px 4px 24px",
             border: "none",
-            color: "#444746",
+
             alignSelf: "flex-end",
             maxWidth: "85%",
             display: "inline-block",
@@ -116,21 +146,21 @@ const TypewriterEffect = ({ text, speed = 5 }) => {
             margin: "0.5rem 0 1.5rem 0",
           },
           "& li": {
+            mb: 1.5,
             display: "list-item",
             listStyleType: "none",
             position: "relative",
-            mb: 1.2,
             pl: 0.5,
             "&::before": {
               content: '"•"',
-              color: "#1a73e8",
+              color: "#070707",
               fontWeight: "bold",
-              fontSize: "1.2rem",
+              fontSize: "1.0rem",
               position: "absolute",
               left: "-1.2rem",
               top: "-0.1rem",
             },
-            "& p": { display: "inline", m: 0 }, // Keeps text on same line as bullet
+            "& p": { display: "inline", m: 0, fontSize: "1.0rem" },
           },
 
           /* --- 3. HEADERS & DIVIDERS --- */
@@ -139,21 +169,28 @@ const TypewriterEffect = ({ text, speed = 5 }) => {
             mt: 3,
             mb: 1.5,
             fontWeight: 700,
-            fontSize: "1.25rem",
+            fontSize: "1.0rem",
           },
           "& h3": {
             color: "#1a73e8",
             mt: 2,
             mb: 1,
-            fontSize: "0.85rem",
+            fontSize: "1.0rem",
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.05rem",
           },
+          "& h1": {
+            mt: 2,
+            mb: 1,
+            fontSize: "1.0rem",
+            fontWeight: 900,
+            textTransform: "uppercase",
+          },
           "& hr": { border: "none", borderTop: "1px solid #e2e8f0", my: 3 },
 
           /* --- 4. JAMB EXAM ALERTS --- */
-          "& strong": { fontWeight: 700, color: "#000000" }, // Reddish tint for emphasis
+          "& strong": { fontWeight: 700, color: "#000000" },
 
           /* --- 5. LATEX SPACING --- */
           "& .katex-display": { my: 2, overflowX: "auto", overflowY: "hidden" },

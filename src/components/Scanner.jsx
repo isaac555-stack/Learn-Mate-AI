@@ -2,24 +2,14 @@ import { useState } from "react";
 import {
   Container,
   Typography,
-  Paper,
-  Tabs,
-  Tab,
   Box,
   Fade,
   Avatar,
   Stack,
   Backdrop,
   CircularProgress,
-  useTheme,
   alpha,
 } from "@mui/material";
-import {
-  AutoStories,
-  LibraryBooks,
-  School,
-  AutoAwesome,
-} from "@mui/icons-material";
 import HeaderSection from "./HeaderSection";
 import ScannerTab from "./ScannerTab";
 import LibraryTab from "./LibraryTab";
@@ -31,7 +21,6 @@ const Scanner = () => {
   const [tab, setTab] = useState(0);
   const [summary, setSummary] = useState("");
   const { savedNotes, saveNote, deleteNote } = useNotes();
-  const theme = useTheme();
 
   // --- Quiz States ---
   const [isQuizLoading, setIsQuizLoading] = useState(false);
@@ -39,17 +28,11 @@ const Scanner = () => {
   const [activeQuiz, setActiveQuiz] = useState([]);
   const [quizTopic, setQuizTopic] = useState("");
 
-  /**
-   * Refactored StartQuiz
-   * Now accepts 'count' from the LibraryTab configuration modal
-   */
-  // --- Inside startQuiz in Scanner.jsx ---
   const startQuiz = async (note, count) => {
     setIsQuizLoading(true);
     try {
       const questions = await generateQuiz(note.content, count);
 
-      // FIX: Set the array directly so QuizModal can map through it
       setActiveQuiz(questions);
       setQuizTopic(note.title || note.topic || "Quiz");
       setQuizOpen(true);
@@ -63,7 +46,7 @@ const Scanner = () => {
   return (
     <Box
       sx={{
-        bgcolor: "#F0F2F5",
+        bgcolor: "#fbfbfb",
         minHeight: "100vh",
 
         m: 0,
@@ -117,7 +100,10 @@ const Scanner = () => {
 
       <HeaderSection tab={tab} setTab={setTab} />
 
-      <Container maxWidth="md" sx={{ pt: { xs: 14, md: 16 }, pb: 0 }}>
+      <Container
+        maxWidth="md"
+        sx={{ pt: { xs: 14, md: 16 }, pb: { xs: 6, md: 6 } }}
+      >
         <Box sx={{ position: "relative" }}>
           {tab === 0 ? (
             <Fade in={tab === 0}>
