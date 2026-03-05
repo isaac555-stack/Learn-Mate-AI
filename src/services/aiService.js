@@ -180,7 +180,6 @@ export const explainFurther = async (originalSummary, specificConcept) => {
       model: LITE_MODEL,
       generationConfig: {
         temperature: 0.4,
-        maxOutputTokens: 150,
       },
     });
 
