@@ -127,207 +127,222 @@ const LibraryTab = ({
   return (
     <Box sx={{ pb: 6, mt: 2 }}>
       {/* Search Bar */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 0.5,
-          mb: 4,
-          borderRadius: "100px",
-          border: "1px solid #e2e8f0",
-          bgcolor: "rgba(255,255,255,0.8)",
-          backdropFilter: "blur(10px)",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <TextField
-          fullWidth
-          variant="standard"
-          placeholder="Search by topic, subject..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            disableUnderline: true,
-            startAdornment: (
-              <InputAdornment position="start" sx={{ pl: 2 }}>
-                <Search sx={{ color: "#94a3b8" }} />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery && (
-              <IconButton
-                size="small"
-                onClick={() => setSearchQuery("")}
-                sx={{ mr: 1 }}
-              >
-                <Clear fontSize="small" />
-              </IconButton>
-            ),
-          }}
-          sx={{ py: 1 }}
-        />
-      </Paper>
 
-      {/* Subject Filter Chips */}
-
-      <Box
-        sx={{
-          overflowX: "auto",
-          py: 1,
-          mb: 3,
-          "&::-webkit-scrollbar": { display: "none" },
-        }}
-      >
-        <Stack direction="row" spacing={1.5}>
-          {subjects.map((subj) => (
-            <Chip
-              key={subj}
-              label={subj}
-              onClick={() => setFilter(subj)}
-              sx={{
-                px: 1,
-                py: 2.5,
-                borderRadius: "14px",
-                fontWeight: 800,
-                fontSize: "0.85rem",
-                bgcolor: filter === subj ? "#6366F1" : "white",
-                color: filter === subj ? "white" : "#64748B",
-                border: "1px solid",
-                borderColor: filter === subj ? "#6366F1" : "#e2e8f0",
-                "&:hover": { bgcolor: filter === subj ? "#4f46e5" : "#f8fafc" },
-                transition: "0.2s",
-              }}
-            />
-          ))}
-        </Stack>
-      </Box>
+      {filteredNotes.length > 0 && <div> </div>}
 
       {/* Library Grid/List */}
       {filteredNotes.length > 0 ? (
-        <Stack direction="column" spacing={2}>
-          {filteredNotes.map((note) => {
-            const style = getSubjectStyle(note.subject);
-            return (
-              <Fade in key={note.id}>
-                <Paper
-                  elevation={0}
-                  onClick={() => handleOpenNote(note)}
+        <div>
+          {" "}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 0.5,
+              mb: 4,
+              borderRadius: "100px",
+              border: "1px solid #e2e8f0",
+              bgcolor: "rgba(255,255,255,0.8)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <TextField
+              fullWidth
+              variant="standard"
+              placeholder="Search by topic, subject..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                disableUnderline: true,
+                startAdornment: (
+                  <InputAdornment position="start" sx={{ pl: 2 }}>
+                    <Search sx={{ color: "#94a3b8" }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchQuery("")}
+                    sx={{ mr: 1 }}
+                  >
+                    <Clear fontSize="small" />
+                  </IconButton>
+                ),
+              }}
+              sx={{ py: 1 }}
+            />
+          </Paper>
+          {/* Subject Filter Chips */}
+          <Box
+            sx={{
+              overflowX: "auto",
+              py: 1,
+              mb: 3,
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            <Stack direction="row" spacing={1.5}>
+              {subjects.map((subj) => (
+                <Chip
+                  key={subj}
+                  label={subj}
+                  onClick={() => setFilter(subj)}
                   sx={{
-                    p: 2,
-                    borderRadius: "24px",
-                    bgcolor: "white",
-                    border: "1px solid #f1f5f9",
-                    cursor: "pointer",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 2,
+                    px: 1,
+                    py: 2.5,
+                    borderRadius: "14px",
+                    fontWeight: 800,
+                    fontSize: "0.85rem",
+                    bgcolor: filter === subj ? "#6366F1" : "white",
+                    color: filter === subj ? "white" : "#64748B",
+                    border: "1px solid",
+                    borderColor: filter === subj ? "#6366F1" : "#e2e8f0",
                     "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: "0 12px 24px rgba(0,0,0,0.04)",
-                      borderColor: alpha(style.color, 0.4),
+                      bgcolor: filter === subj ? "#4f46e5" : "#f8fafc",
                     },
+                    transition: "0.2s",
                   }}
-                >
-                  <Box
+                />
+              ))}
+            </Stack>
+          </Box>
+          <Stack direction="column" spacing={2}>
+            {filteredNotes.map((note) => {
+              const style = getSubjectStyle(note.subject);
+              return (
+                <Fade in key={note.id}>
+                  <Paper
+                    elevation={0}
+                    onClick={() => handleOpenNote(note)}
                     sx={{
+                      p: 2,
+                      borderRadius: "24px",
+                      bgcolor: "white",
+                      border: "1px solid #f1f5f9",
+                      cursor: "pointer",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                       display: "flex",
                       alignItems: "center",
+                      justifyContent: "space-between",
                       gap: 2,
-                      flexGrow: 1,
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 12px 24px rgba(0,0,0,0.04)",
+                        borderColor: alpha(style.color, 0.4),
+                      },
                     }}
                   >
-                    <Avatar
+                    <Box
                       sx={{
-                        bgcolor: style.bg,
-                        color: style.color,
-                        width: 52,
-                        height: 52,
-                        borderRadius: "16px",
-                        fontSize: "1.5rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        flexGrow: 1,
                       }}
                     >
-                      {style.icon}
-                    </Avatar>
-
-                    <Box>
-                      <Typography
-                        variant="subtitle1"
+                      <Avatar
                         sx={{
-                          fontSize: "0.85rem",
-                          fontWeight: 800,
-                          color: "#1E293B",
-                          lineHeight: 1.2,
-                          mb: 0.5,
+                          bgcolor: style.bg,
+                          color: style.color,
+                          width: 52,
+                          height: 52,
+                          borderRadius: "16px",
+                          fontSize: "1.5rem",
                         }}
                       >
-                        {note.title.trim().slice(0, 14) + "...." ||
-                          "Quick Scan"}
-                      </Typography>
+                        {style.icon}
+                      </Avatar>
 
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Box>
                         <Typography
-                          variant="caption"
+                          variant="subtitle1"
                           sx={{
+                            fontSize: "0.85rem",
                             fontWeight: 800,
-                            color: style.color,
-                            bgcolor: alpha(style.color, 0.1),
-                            px: 1,
-                            borderRadius: "6px",
+                            color: "#1E293B",
+                            lineHeight: 1.2,
+                            mb: 0.5,
                           }}
                         >
-                          {note.subject}
+                          {note.title.trim().slice(0, 14) + "...." ||
+                            "Quick Scan"}
                         </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "#94a3b8", fontWeight: 600 }}
-                        >
-                          {note.date}
-                        </Typography>
-                      </Stack>
-                    </Box>
-                  </Box>
 
-                  <Stack direction="row" spacing={1}>
-                    <Tooltip title="PrepFlow Quiz">
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 800,
+                              color: style.color,
+                              bgcolor: alpha(style.color, 0.1),
+                              px: 1,
+                              borderRadius: "6px",
+                            }}
+                          >
+                            {note.subject}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#94a3b8", fontWeight: 600 }}
+                          >
+                            {note.date}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    </Box>
+
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="PrepFlow Quiz">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => openQuizSetup(e, note)}
+                          sx={{
+                            bgcolor: alpha("#6366F1", 0.05),
+                            color: "#6366F1",
+                            "&:hover": { bgcolor: "#6366F1", color: "#fff" },
+                            transition: "0.2s",
+                          }}
+                        >
+                          <AutoAwesome fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
                       <IconButton
                         size="small"
-                        onClick={(e) => openQuizSetup(e, note)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteNote(note.id);
+                        }}
                         sx={{
-                          bgcolor: alpha("#6366F1", 0.05),
-                          color: "#6366F1",
-                          "&:hover": { bgcolor: "#6366F1", color: "#fff" },
-                          transition: "0.2s",
+                          color: "#cbd5e1",
+                          "&:hover": {
+                            color: "#ef4444",
+                            bgcolor: alpha("#ef4444", 0.08),
+                          },
                         }}
                       >
-                        <AutoAwesome fontSize="small" />
+                        <DeleteOutline fontSize="small" />
                       </IconButton>
-                    </Tooltip>
-
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteNote(note.id);
-                      }}
-                      sx={{
-                        color: "#cbd5e1",
-                        "&:hover": {
-                          color: "#ef4444",
-                          bgcolor: alpha("#ef4444", 0.08),
-                        },
-                      }}
-                    >
-                      <DeleteOutline fontSize="small" />
-                    </IconButton>
-                  </Stack>
-                </Paper>
-              </Fade>
-            );
-          })}
-        </Stack>
+                    </Stack>
+                  </Paper>
+                </Fade>
+              );
+            })}
+          </Stack>
+        </div>
       ) : (
-        <Box sx={{ textAlign: "center" }}>
+        <Box
+          sx={{
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            pt: { xs: 14, md: 8 },
+            pb: { xs: 6, md: 6 },
+          }}
+        >
           <Box
             sx={{
               width: 100,
@@ -338,15 +353,20 @@ const LibraryTab = ({
               alignItems: "center",
               justifyContent: "center",
               mx: "auto",
-              mb: 3,
             }}
           >
             <MenuBook sx={{ fontSize: 40, color: "#cbd5e1" }} />
           </Box>
-          <Typography variant="h5" sx={{ color: "#1e293b", fontWeight: 800 }}>
-            Your Library is empty
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 900, color: "#1E293B", mb: 1 }}
+          >
+            Library is empty?
           </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b" }}>
+          <Typography
+            variant="body1"
+            sx={{ color: "#64748b", maxWidth: 400, mb: 4 }}
+          >
             Scan your first note to start building your library.
           </Typography>
         </Box>
