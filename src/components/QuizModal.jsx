@@ -133,7 +133,7 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                   textTransform: "uppercase",
                 }}
               >
-                PrepFlow AI
+                PrepFlow
               </Typography>
               <Typography
                 variant="h6"
