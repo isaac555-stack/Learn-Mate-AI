@@ -1,12 +1,7 @@
 import { Box, Avatar, Typography, Button, Fade } from "@mui/material";
-import {
-  Description,
-  PhotoCamera,
-  Book,
-  DescriptionSharp,
-} from "@mui/icons-material";
+import { PhotoCamera } from "@mui/icons-material";
 
-import image from "../assets/PrepFlowIconCool.png";
+import image from "../assets/PrepFlowIconCool.webp";
 
 const EmptyState = ({ onStartScan, pages }) => (
   <Fade in>

@@ -168,6 +168,7 @@ const LibraryTab = ({
       </Paper>
 
       {/* Subject Filter Chips */}
+
       <Box
         sx={{
           overflowX: "auto",
@@ -288,7 +289,7 @@ const LibraryTab = ({
                   </Box>
 
                   <Stack direction="row" spacing={1}>
-                    <Tooltip title="AI Quiz">
+                    <Tooltip title="PrepFlow Quiz">
                       <IconButton
                         size="small"
                         onClick={(e) => openQuizSetup(e, note)}
@@ -326,7 +327,7 @@ const LibraryTab = ({
           })}
         </Stack>
       ) : (
-        <Box sx={{ textAlign: "center", mt: 8 }}>
+        <Box sx={{ textAlign: "center" }}>
           <Box
             sx={{
               width: 100,
@@ -343,7 +344,7 @@ const LibraryTab = ({
             <MenuBook sx={{ fontSize: 40, color: "#cbd5e1" }} />
           </Box>
           <Typography variant="h5" sx={{ color: "#1e293b", fontWeight: 800 }}>
-            Your shelf is empty
+            Your Library is empty
           </Typography>
           <Typography variant="body2" sx={{ color: "#64748b" }}>
             Scan your first note to start building your library.
