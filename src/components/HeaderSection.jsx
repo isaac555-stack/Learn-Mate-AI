@@ -8,7 +8,7 @@ import {
   Stack,
   alpha,
 } from "@mui/material";
-import { AutoAwesome, LibraryBooks, School } from "@mui/icons-material";
+import { AutoAwesome, LibraryBooks } from "@mui/icons-material";
 
 const HeaderSection = ({ tab, setTab }) => (
   <Box

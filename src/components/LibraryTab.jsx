@@ -36,6 +36,7 @@ import {
 } from "@mui/icons-material";
 
 // Enhanced styles with vibrant Nigerian education-themed colors
+
 const getSubjectStyle = (subject = "General") => {
   const map = {
     Biology: {
@@ -48,7 +49,12 @@ const getSubjectStyle = (subject = "General") => {
       icon: <Science />,
       bg: "rgba(59, 130, 246, 0.08)",
     },
-    Maths: {
+    Mathematics: {
+      color: "#f59e0b",
+      icon: <Calculate />,
+      bg: "rgba(245, 158, 11, 0.08)",
+    },
+    "Further Mathematics": {
       color: "#f59e0b",
       icon: <Calculate />,
       bg: "rgba(245, 158, 11, 0.08)",
@@ -63,7 +69,17 @@ const getSubjectStyle = (subject = "General") => {
       icon: <School />,
       bg: "rgba(139, 92, 246, 0.08)",
     },
+    History: {
+      color: "#8b5cf6",
+      icon: <History />,
+      bg: "rgba(139, 92, 246, 0.08)",
+    },
     Economics: {
+      color: "#ec4899",
+      icon: <MenuBook />,
+      bg: "rgba(236, 72, 153, 0.08)",
+    },
+    Commerce: {
       color: "#ec4899",
       icon: <MenuBook />,
       bg: "rgba(236, 72, 153, 0.08)",
@@ -73,7 +89,53 @@ const getSubjectStyle = (subject = "General") => {
       icon: <Book />,
       bg: "rgba(6, 182, 212, 0.08)",
     },
+    Literature: {
+      color: "#06b6d4",
+      icon: <Book />,
+      bg: "rgba(6, 182, 212, 0.08)",
+    },
+    Civic: {
+      color: "#f43f5e",
+      icon: <School />,
+      bg: "rgba(244, 63, 94, 0.08)",
+    },
+    Agriculture: {
+      color: "#16a34a",
+      icon: <Science />,
+      bg: "rgba(22, 163, 74, 0.08)",
+    },
+    Geography: {
+      color: "#0d9488",
+      icon: <Science />,
+      bg: "rgba(13, 148, 136, 0.08)",
+    },
+    "Financial Accounting": {
+      color: "#0891b2",
+      icon: <Calculate />,
+      bg: "rgba(8, 145, 178, 0.08)",
+    },
+    "Computer Studies": {
+      color: "#4f46e5",
+      icon: <History />,
+      bg: "rgba(79, 70, 229, 0.08)",
+    },
+    "Data Processing": {
+      color: "#4f46e5",
+      icon: <History />,
+      bg: "rgba(79, 70, 229, 0.08)",
+    },
+    Marketing: {
+      color: "#f43f5e",
+      icon: <MenuBook />,
+      bg: "rgba(244, 63, 94, 0.08)",
+    },
+    "T.D": {
+      color: "#64748b",
+      icon: <AutoFixHigh />,
+      bg: "rgba(100, 116, 139, 0.08)",
+    },
   };
+
   return (
     map[subject] || {
       color: "#6366F1",
@@ -82,7 +144,6 @@ const getSubjectStyle = (subject = "General") => {
     }
   );
 };
-
 const LibraryTab = ({
   savedNotes,
   setSummary,
@@ -263,8 +324,9 @@ const LibraryTab = ({
                             mb: 0.5,
                           }}
                         >
-                          {note.title.trim().slice(0, 14) + "...." ||
-                            "Quick Scan"}
+                          {note.title.length > 14
+                            ? note.title.slice(0, 15) + "..."
+                            : note.title}
                         </Typography>
 
                         <Stack direction="row" spacing={1} alignItems="center">

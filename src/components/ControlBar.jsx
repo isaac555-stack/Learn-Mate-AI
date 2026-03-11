@@ -98,7 +98,7 @@ const ControlBar = ({
             <Button
               variant="contained"
               onClick={onFinishAndSummarize}
-              disabled={pages.length < 1}
+              disabled={pages.length < 1 || summary}
               sx={{
                 borderRadius: "15px",
                 textTransform: "none",

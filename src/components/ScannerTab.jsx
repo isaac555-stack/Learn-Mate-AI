@@ -9,13 +9,13 @@ import { speak, stopSpeech } from "../services/speechService";
 import { explainFurther, processNotes } from "../services/aiService";
 import { pulse, shimmer } from "../services/animation";
 /* --- MAIN SCANNER TAB --- */
-const ScannerTab = ({ summary, setSummary, saveSummary }) => {
+const ScannerTab = ({ summary, setSummary, saveSummary, pages, setPages }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDeepDiving, setIsDeepDiving] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [userQuery, setUserQuery] = useState("");
-  const [pages, setPages] = useState([]);
+
   const [metadata, setMetadata] = useState(null);
   const [scanSessionId, setScanSessionId] = useState("initial");
 

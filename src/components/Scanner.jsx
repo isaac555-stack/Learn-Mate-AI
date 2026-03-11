@@ -20,6 +20,7 @@ import { generateQuiz } from "../services/aiService";
 const Scanner = () => {
   const [tab, setTab] = useState(0);
   const [summary, setSummary] = useState("");
+  const [pages, setPages] = useState([]);
   const { savedNotes, saveNote, deleteNote } = useNotes();
 
   // --- Quiz States ---
@@ -112,6 +113,8 @@ const Scanner = () => {
                   summary={summary}
                   setSummary={setSummary}
                   saveSummary={saveNote}
+                  pages={pages}
+                  setPages={setPages}
                 />
               </Box>
             </Fade>

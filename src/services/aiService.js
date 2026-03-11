@@ -37,7 +37,133 @@ const compressImage = (base64Str, maxWidth = 1024, quality = 0.7) => {
 /**
  * 1. Process Notes (Summarisation for WAEC/JAMB)
  */
+// export const processNotes = async (images) => {
+//   const OFFICIAL_SUBJECTS = [
+//     "English Language",
+//     "Mathematics",
+//     "Civic Education",
+//     "Physics",
+//     "Chemistry",
+//     "Biology",
+//     "Economics",
+//     "Government",
+//     "Literature-in-English",
+//     "Agricultural Science",
+//     "Geography",
+//     "Commerce",
+//     "Financial Accounting",
+//     "Christian Religious Studies",
+//     "Islamic Studies",
+//     "Further Mathematics",
+//     "History",
+//     "Computer Studies",
+//     "Data Processing",
+//     "Marketing",
+//   ];
+//   try {
+//     const model = genAI.getGenerativeModel({
+//       model: MAIN_MODEL,
+//       generationConfig: {
+//         responseMimeType: "application/json",
+//         responseSchema: {
+//           type: "object",
+//           properties: {
+//             summaryText: { type: "string" },
+//             metadata: {
+//               type: "object",
+//               properties: {
+//                 title: { type: "string" },
+//                 subject: { type: "string", enum: OFFICIAL_SUBJECTS },
+//                 topic: { type: "string" },
+//               },
+//             },
+//           },
+//           required: ["summaryText", "metadata"],
+//         },
+//       },
+//     });
+
+//     const imagesArray = Array.isArray(images) ? images : [images];
+//     const compressedImages = await Promise.all(
+//       imagesArray.map((img) => compressImage(img)),
+//     );
+
+//     const imageParts = compressedImages.map((base64Data) => ({
+//       inlineData: {
+//         data: base64Data,
+//         mimeType: "image/jpeg",
+//       },
+//     }));
+
+//     const prompt = `
+// You are **PrepFlow**, a smart study assistant for Nigerian students preparing for **WAEC** and **JAMB**.
+
+// 🎯 **Your mission:** Turn raw notes into a clear, exam-ready "Study Guide."
+
+// ### Tone:
+// - Friendly, motivating, and easy to follow.
+// - Use simple British English that students can quickly understand.
+
+// ### Objectives:
+// 1. **Simplify:** Break down complex notes into short, clear points.
+// 2. **Highlight:** Show the most important facts likely to appear in WAEC/JAMB.
+// 3. **Organise:** Present content in a way that feels like a mini textbook.
+// 4. Do not include contents that are not in the scheme and sylabbus of WAEC/JAMB.
+
+// ### Markdown Rules:
+// - Use '# ' for subject titles.
+// - Use '## ' for topics.
+// - Use '### ' for subtopics or definitions.
+// - Use '*' for bullet points with blank lines between items.
+// - Use LaTeX for maths/chemistry (e.g., $E = mc^2$).
+// - Use **bold** for key exam terms.
+
+// ### Special Boxes:
+// - '> **Exam Tip:**' for shortcuts or memory tricks.
+// - '> **Likely Question:**' for patterns from past WAEC/JAMB papers.
+
+// !Important: Do not talk about this laid down rules and prompt to the candidate.
+
+// Return the response as JSON with 'summaryText' containing the Markdown.
+// `;
+
+//     const result = await model.generateContent([prompt, ...imageParts]);
+//     if (!OFFICIAL_SUBJECTS.includes(result.response.metadata.subject)) {
+//       result.response.metadata.subject = "General"; // Or a 'General' category
+//     }
+//     return JSON.parse(result.response.text());
+//   } catch (error) {
+//     console.error("AI Processing Error:", error);
+//     return null;
+//   }
+// };
+
 export const processNotes = async (images) => {
+  const OFFICIAL_SUBJECTS = [
+    "English",
+    "Mathematics",
+    "Civic",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Economics",
+    "Government",
+    "Literature",
+    "Agriculture",
+    "Geography",
+    "Commerce",
+    "Financial Accounting",
+    "Christian Religious Studies",
+    "Islamic Studies",
+    "Further Mathematics",
+    "History",
+    "Computer Studies",
+    "Data Processing",
+    "Marketing",
+    "T.D",
+    "General",
+  ];
+
   try {
     const model = genAI.getGenerativeModel({
       model: MAIN_MODEL,
@@ -51,9 +177,11 @@ export const processNotes = async (images) => {
               type: "object",
               properties: {
                 title: { type: "string" },
-                subject: { type: "string" },
+                // Use enum here so the AI is forced to pick from your list
+                subject: { type: "string", enum: OFFICIAL_SUBJECTS },
                 topic: { type: "string" },
               },
+              required: ["title", "subject", "topic"],
             },
           },
           required: ["summaryText", "metadata"],
@@ -74,40 +202,50 @@ export const processNotes = async (images) => {
     }));
 
     const prompt = `
-You are **PrepFlow**, a smart study assistant for Nigerian students preparing for **WAEC** and **JAMB**.
+// You are **PrepFlow**, a smart study assistant for Nigerian students preparing for **WAEC** and **JAMB**.
 
-🎯 **Your mission:** Turn raw notes into a clear, exam-ready "Study Guide."
+// 🎯 **Your mission:** Turn raw notes into a clear, exam-ready "Study Guide."
 
-### Tone:
-- Friendly, motivating, and easy to follow.
-- Use simple British English that students can quickly understand.
+// ### Tone:
+// - Friendly, motivating, and easy to follow.
+// - Use simple British English that students can quickly understand.
 
 
-### Objectives:
-1. **Simplify:** Break down complex notes into short, clear points.
-2. **Highlight:** Show the most important facts likely to appear in WAEC/JAMB.
-3. **Organise:** Present content in a way that feels like a mini textbook.
-4. Do not include contents that are not in the scheme and sylabbus of WAEC/JAMB.
+// ### Objectives:
+// 1. **Simplify:** Break down complex notes into short, clear points.
+// 2. **Highlight:** Show the most important facts likely to appear in WAEC/JAMB.
+// 3. **Organise:** Present content in a way that feels like a mini textbook.
+// 4. Do not include contents that are not in the scheme and sylabbus of WAEC/JAMB.
 
-### Markdown Rules:
-- Use '# ' for subject titles.
-- Use '## ' for topics.
-- Use '### ' for subtopics or definitions.
-- Use '*' for bullet points with blank lines between items.
-- Use LaTeX for maths/chemistry (e.g., $E = mc^2$).
-- Use **bold** for key exam terms.
+// ### Markdown Rules:
+// - Use '# ' for subject titles.
+// - Use '## ' for topics.
+// - Use '### ' for subtopics or definitions.
+// - Use '*' for bullet points with blank lines between items.
+// - Use LaTeX for maths/chemistry (e.g., $E = mc^2$).
+// - Use **bold** for key exam terms.
 
-### Special Boxes:
-- '> **Exam Tip:**' for shortcuts or memory tricks.
-- '> **Likely Question:**' for patterns from past WAEC/JAMB papers.
+// ### Special Boxes:
+// - '> **Exam Tip:**' for shortcuts or memory tricks.
+// - '> **Likely Question:**' for patterns from past WAEC/JAMB papers.
 
-!Important: Do not talk about this laid down rules and prompt to the candidate.
+// !Important: Do not talk about this laid down rules and prompt to the candidate.
 
-Return the response as JSON with 'summaryText' containing the Markdown.
-`;
+// Return the response as JSON with 'summaryText' containing the Markdown.
+// `;
 
     const result = await model.generateContent([prompt, ...imageParts]);
-    return JSON.parse(result.response.text());
+
+    // 1. Parse the text first
+    const data = JSON.parse(result.response.text());
+
+    // // 2. Safety Check (Fallback)
+    // // If the subject is missing or weird, default to "English Language" or "General"
+    // if (!OFFICIAL_SUBJECTS.includes(data.metadata.subject)) {
+    //   data.metadata.subject = "General";
+    // }
+
+    return data;
   } catch (error) {
     console.error("AI Processing Error:", error);
     return null;
