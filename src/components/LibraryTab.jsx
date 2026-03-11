@@ -128,8 +128,6 @@ const LibraryTab = ({
     <Box sx={{ pb: 6, mt: 2 }}>
       {/* Search Bar */}
 
-      {filteredNotes.length > 0 && <div> </div>}
-
       {/* Library Grid/List */}
       {filteredNotes.length > 0 ? (
         <div>
