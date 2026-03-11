@@ -16,7 +16,6 @@ import {
   PhotoCamera,
 } from "@mui/icons-material";
 import { alpha } from "@mui/system";
-import { downloadNoteAsPDF } from "../services/downloadService";
 import PagesPreview from "./PagesPreview";
 
 const ControlBar = ({
@@ -45,12 +44,11 @@ const ControlBar = ({
       transform: "translateX(-50%)",
       width: { xs: "85%", md: "auto" }, // Auto width for desktop creates a sleeker "Pill"
       minWidth: { md: "750px" },
-
       py: 1.0,
       mb: { xs: 2, md: 2 },
       px: 1,
       zIndex: 1000,
-      border: "1px solid rgba(0, 0, 0, 0.17)",
+      border: "0.7px solid rgba(0, 0, 0, 0.08)",
       borderRadius: "30px",
     }}
   >

@@ -21,7 +21,7 @@ const SummaryView = ({ summary, metadata, isDeepDiving, scanSessionId }) => {
     if (!userIsScrolling) {
       scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [summary,]);
+  }, [summary]);
 
   // Detect manual scroll to stop auto-scrolling
   const handleWheel = () => {
@@ -41,14 +41,15 @@ const SummaryView = ({ summary, metadata, isDeepDiving, scanSessionId }) => {
             sx={{ mb: 2, px: { xs: 1, md: 3 }, alignItems: "center" }}
           >
             <Chip
-              icon={<MenuBook sx={{ fontSize: "1rem !important" }} />}
+              icon={
+                <MenuBook sx={{ fontSize: "1rem !important", fill: "#FFF" }} />
+              }
               label={metadata.subject || "General Study"}
               size="small"
               sx={{
                 fontWeight: 900,
                 bgcolor: "#6366F1",
                 color: "white",
-                textTransform: "uppercase",
                 letterSpacing: 1,
               }}
             />

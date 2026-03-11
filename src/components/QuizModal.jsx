@@ -199,7 +199,7 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                 }}
               >
                 <Typography
-                  variant="h5"
+                  variant="subtitle1"
                   component="div"
                   sx={{ fontWeight: 800, mb: 4, color: "#0F172A" }}
                 >
