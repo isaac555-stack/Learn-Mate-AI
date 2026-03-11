@@ -21,6 +21,7 @@ const Scanner = () => {
   const [tab, setTab] = useState(0);
   const [summary, setSummary] = useState("");
   const [pages, setPages] = useState([]);
+  const [metadata, setMetadata] = useState(null);
   const { savedNotes, saveNote, deleteNote } = useNotes();
 
   // --- Quiz States ---
@@ -115,6 +116,8 @@ const Scanner = () => {
                   saveSummary={saveNote}
                   pages={pages}
                   setPages={setPages}
+                  metadata={metadata}
+                  setMetadata={setMetadata}
                 />
               </Box>
             </Fade>

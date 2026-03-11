@@ -9,14 +9,22 @@ import { speak, stopSpeech } from "../services/speechService";
 import { explainFurther, processNotes } from "../services/aiService";
 import { pulse, shimmer } from "../services/animation";
 /* --- MAIN SCANNER TAB --- */
-const ScannerTab = ({ summary, setSummary, saveSummary, pages, setPages }) => {
+const ScannerTab = ({
+  summary,
+  setSummary,
+  saveSummary,
+  pages,
+  setPages,
+  metadata,
+  setMetadata,
+}) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDeepDiving, setIsDeepDiving] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [userQuery, setUserQuery] = useState("");
 
-  const [metadata, setMetadata] = useState(null);
+  // const [metadata, setMetadata] = useState(null);
   const [scanSessionId, setScanSessionId] = useState("initial");
 
   const webcamRef = useRef(null);
