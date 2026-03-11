@@ -140,7 +140,7 @@ const getSubjectStyle = (subject = "General") => {
     map[subject] || {
       color: "#6366F1",
       icon: <AutoFixHigh />,
-      bg: "rgba(99, 102, 241, 0.08)",
+      bg: "rgba(98, 99, 151, 0.08)",
     }
   );
 };

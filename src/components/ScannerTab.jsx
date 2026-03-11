@@ -160,6 +160,7 @@ const ScannerTab = ({ summary, setSummary, saveSummary, pages, setPages }) => {
         handleSpeech={handleSpeech}
         userQuery={userQuery}
         setUserQuery={setUserQuery}
+        isAnalyzing={isAnalyzing}
         handleExplain={handleExplain}
         onFinishAndSummarize={onFinishAndSummarize}
         pages={pages}

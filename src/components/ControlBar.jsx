@@ -32,6 +32,7 @@ const ControlBar = ({
   pages,
   onOpenCamera,
   setPages,
+  isAnalyzing,
 }) => (
   <Box
     sx={{
@@ -98,7 +99,7 @@ const ControlBar = ({
             <Button
               variant="contained"
               onClick={onFinishAndSummarize}
-              disabled={pages.length < 1 || summary}
+              disabled={pages.length < 1 || isAnalyzing}
               sx={{
                 borderRadius: "15px",
                 textTransform: "none",
