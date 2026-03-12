@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import { useToast } from "../context/ToastContext"; // Ensure path is correct
 
 export const useNotes = () => {
+  const showToast = useToast();
+
   // 1. LAZY INITIALIZER: Loads data immediately before the first render.
   // This prevents the "empty array" overwrite bug on reload.
   const [savedNotes, setSavedNotes] = useState(() => {
@@ -42,7 +45,7 @@ export const useNotes = () => {
     // Functional update ensures we have the most current list
     setSavedNotes((prev) => [newNote, ...prev]);
 
-    alert(`Saved ${newNote.title} to ${newNote.subject}! 📚`);
+    showToast(`Saved ${newNote.title} to ${newNote.subject}! 📚`);
   };
 
   /**

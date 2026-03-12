@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
-import { Box, Stack, Typography, Avatar, Chip, alpha } from "@mui/material";
+
+import { Box, Stack, Typography } from "@mui/material";
 import { AutoAwesome } from "@mui/icons-material";
 import CameraPortal from "./CameraPortal";
 import SummaryView from "./SummaryView";
@@ -49,7 +50,7 @@ const ScannerTab = ({
     setIsAnalyzing(true);
     try {
       const result = await processNotes(pages);
-      console.log("AI Processed Result:", result);
+
       if (result) {
         setSummary(result.summaryText);
         setMetadata(result.metadata);

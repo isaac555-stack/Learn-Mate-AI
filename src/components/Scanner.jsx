@@ -10,11 +10,13 @@ import {
   CircularProgress,
   alpha,
 } from "@mui/material";
+import { useNotes } from "../hooks/useNotes";
+
 import HeaderSection from "./HeaderSection";
 import ScannerTab from "./ScannerTab";
 import LibraryTab from "./LibraryTab";
 import QuizModal from "./QuizModal";
-import { useNotes } from "../hooks/useNotes";
+
 import { generateQuiz } from "../services/aiService";
 
 const Scanner = () => {
@@ -99,9 +101,7 @@ const Scanner = () => {
           </Typography>
         </Stack>
       </Backdrop>
-
-      <HeaderSection tab={tab} setTab={setTab} />
-
+      <HeaderSection tab={tab} setTab={setTab} />{" "}
       <Container
         maxWidth="md"
         sx={{ pt: { xs: 14, md: 16 }, pb: { xs: 6, md: 6 } }}
