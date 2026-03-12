@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Direct the bot to your sitemap
+Sitemap: https://prepflow-ai.vercel.app/sitemap.xml
