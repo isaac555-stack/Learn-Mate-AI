@@ -11,7 +11,6 @@ import {
   alpha,
 } from "@mui/material";
 import { useNotes } from "../hooks/useNotes";
-
 import HeaderSection from "./HeaderSection";
 import ScannerTab from "./ScannerTab";
 import LibraryTab from "./LibraryTab";
@@ -102,10 +101,7 @@ const Scanner = () => {
         </Stack>
       </Backdrop>
       <HeaderSection tab={tab} setTab={setTab} />{" "}
-      <Container
-        maxWidth="md"
-        sx={{ pt: { xs: 14, md: 16 }, pb: { xs: 6, md: 6 } }}
-      >
+      <Container maxWidth="md" sx={{ pt: { xs: 14, md: 16 }, pb: { xs: 6 } }}>
         <Box sx={{ position: "relative" }}>
           {tab === 0 ? (
             <Fade in={tab === 0}>

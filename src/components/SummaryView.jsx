@@ -84,8 +84,8 @@ const SummaryView = ({ summary, metadata, isDeepDiving, scanSessionId }) => {
             <Fade in>
               <Box
                 sx={{
-                  mt: 4,
                   p: 2,
+                  mb: 5,
                   borderRadius: "20px",
                   bgcolor: alpha("#6366F1", 0.03),
                   border: "1px dashed",

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useToast } from "../context/ToastContext"; // Ensure path is correct
+import { useToast } from "../hooks/useToast"; // Ensure path is correct
 
 export const useNotes = () => {
   const showToast = useToast();
