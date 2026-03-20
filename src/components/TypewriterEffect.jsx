@@ -22,8 +22,7 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
       return;
     }
 
-    // 1. APPEND LOGIC: If the new text is just an extension of what's already there,
-    // don't clear the screen. Start typing from the last known length.
+    // 1. APPEND LOGIC
     if (text.startsWith(displayedText) && displayedText !== "") {
       setIsFinished(false);
       clearExistingTimer();
@@ -32,7 +31,6 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
 
       timerRef.current = setInterval(() => {
         if (i < text.length) {
-          // Keep it snappy: increment by 3 for long strings, 1 for short
           const increment = text.length - i > 500 ? 3 : 1;
           i += increment;
           setDisplayedText(text.slice(0, i));
@@ -43,7 +41,7 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
         }
       }, speed);
     }
-    // 2. FRESH START LOGIC: If it's a completely new scan or reset
+    // 2. FRESH START LOGIC
     else {
       setDisplayedText("");
       setIsFinished(false);
@@ -64,7 +62,7 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
     }
 
     return () => clearExistingTimer();
-  }, [text]); // Triggered whenever text prop updates
+  }, [text, speed]); // FIX 1: Added 'speed' to dependency array
 
   const handleSkip = () => {
     clearExistingTimer();
@@ -133,7 +131,6 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
             my: 2,
             borderRadius: "24px 24px 4px 24px",
             border: "none",
-
             alignSelf: "flex-end",
             maxWidth: "85%",
             display: "inline-block",
@@ -145,7 +142,8 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
             paddingLeft: "1.5rem",
             margin: "0.5rem 0 1.5rem 0",
           },
-          "& li": {
+          // FIX 2a: Only target unordered list items for custom bullets
+          "& ul > li": {
             mb: 1.5,
             display: "list-item",
             listStyleType: "none",
@@ -160,6 +158,13 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
               left: "-1.2rem",
               top: "-0.1rem",
             },
+            "& p": { display: "inline", m: 0, fontSize: "1.0rem" },
+          },
+          // FIX 2b: Target ordered list items separately to preserve numbers
+          "& ol > li": {
+            mb: 1.5,
+            display: "list-item",
+            pl: 0.5,
             "& p": { display: "inline", m: 0, fontSize: "1.0rem" },
           },
 
@@ -189,7 +194,7 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
           },
           "& hr": { border: "none", borderTop: "1px solid #e2e8f0", my: 3 },
 
-          /* --- 4. JAMB EXAM ALERTS --- */
+          /* --- 4. EXAM ALERTS & STRONG TEXT --- */
           "& strong": { fontWeight: 700, color: "#000000" },
 
           /* --- 5. LATEX SPACING --- */

@@ -104,7 +104,6 @@ const ControlBar = ({
                 fontWeight: 800,
                 px: 3,
                 bgcolor: "#6366F1",
-                "&:hover": { bgcolor: "#4f46e5" },
               }}
             >
               Scan

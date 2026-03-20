@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from "react";
-
 import { Box, Stack, Typography } from "@mui/material";
 import { AutoAwesome } from "@mui/icons-material";
 import CameraPortal from "./CameraPortal";
@@ -8,7 +7,9 @@ import ControlBar from "./ControlBar";
 import EmptyState from "./EmptyState";
 import { speak, stopSpeech } from "../services/speechService";
 import { explainFurther, processNotes } from "../services/aiService";
+import { getQuestionsForSubject } from "../services/questionsEngine"; // Your new engine
 import { pulse, shimmer } from "../services/animation";
+
 /* --- MAIN SCANNER TAB --- */
 const ScannerTab = ({
   summary,
@@ -18,6 +19,8 @@ const ScannerTab = ({
   setPages,
   metadata,
   setMetadata,
+  cards,
+  setCards,
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDeepDiving, setIsDeepDiving] = useState(false);
@@ -25,9 +28,11 @@ const ScannerTab = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [userQuery, setUserQuery] = useState("");
 
-  // const [metadata, setMetadata] = useState(null);
-  const [scanSessionId, setScanSessionId] = useState("initial");
+  // New States for the Question Engine
+  const [questions, setQuestions] = useState([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
 
+  const [scanSessionId, setScanSessionId] = useState("initial");
   const webcamRef = useRef(null);
 
   const generateScanId = () =>
@@ -42,13 +47,19 @@ const ScannerTab = ({
     if (summary) {
       setSummary("");
       setMetadata(null);
+      setQuestions([]); // Clear old questions on new scan
     }
-  }, [summary]);
+  }, [summary, setPages, setSummary, setMetadata]);
 
+  /**
+   * CORE LOGIC: Summarize + Fetch Questions
+   */
   const onFinishAndSummarize = async () => {
     if (pages.length === 0) return;
     setIsAnalyzing(true);
+
     try {
+      // 1. Process notes with Gemini
       const result = await processNotes(pages);
 
       if (result) {
@@ -56,7 +67,24 @@ const ScannerTab = ({
         setMetadata(result.metadata);
         setScanSessionId(generateScanId());
         setPages([]);
+
+        // 2. Immediate Background Fetch for JAMB/WAEC Questions
+        setIsLoadingQuestions(true);
+        try {
+          // Pass the detected subject and summary to the engine
+          const fetchedQuestions = await getQuestionsForSubject(
+            result.metadata.subject,
+            result.summaryText,
+          );
+          setQuestions(fetchedQuestions);
+        } catch (quizErr) {
+          console.error("Quiz Engine Error:", quizErr);
+        } finally {
+          setIsLoadingQuestions(false);
+        }
       }
+    } catch (error) {
+      console.error("Analysis Error:", error);
     } finally {
       setIsAnalyzing(false);
     }
@@ -144,7 +172,7 @@ const ScannerTab = ({
               PrepFlow is reading...
             </Typography>
             <Typography variant="body2" sx={{ color: "#64748B", mt: 1 }}>
-              Synthesizing high-yield study points
+              Identifying subject and syncing past questions
             </Typography>
           </Stack>
         ) : summary ? (
@@ -153,6 +181,11 @@ const ScannerTab = ({
             metadata={metadata}
             isDeepDiving={isDeepDiving}
             scanSessionId={scanSessionId}
+            cards={cards}
+            setCards={setCards}
+            // NEW PROPS FOR THE QUIZ
+            questions={questions}
+            isLoadingQuestions={isLoadingQuestions}
           />
         ) : (
           <EmptyState onStartScan={() => setIsCapturing(true)} pages={pages} />

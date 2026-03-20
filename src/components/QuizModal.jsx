@@ -20,14 +20,14 @@ import {
   HistoryEdu,
   AssignmentTurnedIn,
   Replay,
-  LightbulbCircle,
   CheckCircle,
   Cancel,
+  ArrowForward,
 } from "@mui/icons-material";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css"; // Ensure LaTeX styles are active
+import "katex/dist/katex.min.css";
 
 const QuizModal = ({ open, onClose, topic, questions = [] }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -36,8 +36,33 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
   const [timeLeft, setTimeLeft] = useState(40);
   const [showReview, setShowReview] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [userChoices, setUserChoices] = useState([]); // Track answers for review
 
   const currentQuestion = questions?.[currentIdx];
+
+  const MarkdownRenderer = ({ content, uniqueKey }) => (
+    <ReactMarkdown
+      key={uniqueKey}
+      remarkPlugins={[remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+      components={{
+        p: ({ ...props }) => <Typography sx={{ mb: 1 }} {...props} />,
+        li: ({ ...props }) => <li style={{ marginBottom: 6 }} {...props} />,
+      }}
+    >
+      {safeMarkdown(content)}
+    </ReactMarkdown>
+  );
+
+  const safeMarkdown = (text) => {
+    if (!text) return "";
+    if (typeof text !== "string") return String(text);
+
+    return text
+      .replace(/\\n/g, "\n") // fix escaped newlines
+      .replace(/\r/g, "")
+      .trim();
+  };
 
   const handleNext = useCallback(() => {
     if (currentIdx < questions.length - 1) {
@@ -52,16 +77,15 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
   const handleSelect = useCallback(
     (index) => {
       if (selectedAnswer !== null) return;
+
       setSelectedAnswer(index);
+      setUserChoices((prev) => [...prev, index]);
 
       if (index === currentQuestion?.correctAnswer) {
         setScore((prev) => prev + 1);
       }
-
-      // Delay to let user see if they were right/wrong
-      setTimeout(handleNext, 1500);
     },
-    [selectedAnswer, currentQuestion, handleNext],
+    [selectedAnswer, currentQuestion],
   );
 
   // Timer Logic
@@ -69,7 +93,7 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
     if (!open || isFinished || selectedAnswer !== null || showReview) return;
 
     if (timeLeft === 0) {
-      handleSelect(-1);
+      handleSelect(-1); // Mark as incorrect/skipped
       return;
     }
     const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
@@ -83,6 +107,7 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
     setTimeLeft(40);
     setShowReview(false);
     setIsFinished(false);
+    setUserChoices([]);
   };
 
   if (!open || !questions.length) return null;
@@ -93,7 +118,7 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
         sx={{
           position: "fixed",
           inset: 0,
-          bgcolor: "#F1F5F9",
+          bgcolor: "#F8FAFC",
           zIndex: 9999,
           overflowY: "auto",
         }}
@@ -125,52 +150,60 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
             </Box>
             <Box>
               <Typography
-                variant="subtitle2"
+                variant="caption"
                 sx={{
                   color: "#64748B",
-                  fontWeight: 700,
-                  fontSize: "0.7rem",
+                  fontWeight: 800,
                   textTransform: "uppercase",
+                  letterSpacing: 1,
                 }}
               >
-                PrepFlow
+                PrepFlow Quiz
               </Typography>
               <Typography
                 variant="h6"
-                sx={{ fontWeight: 800, color: "#0F172A", lineHeight: 1 }}
+                sx={{ fontWeight: 800, color: "#0F172A", lineHeight: 1.2 }}
               >
                 {topic}
               </Typography>
             </Box>
           </Stack>
-          <IconButton onClick={onClose}>
+          <IconButton onClick={onClose} sx={{ bgcolor: "#F1F5F9" }}>
             <Close />
           </IconButton>
         </Box>
 
-        <Container maxWidth="md" sx={{ py: 4 }}>
+        <Container maxWidth="md" sx={{ py: 6 }}>
           {!isFinished ? (
             <Box>
               <Stack
                 direction="row"
                 justifyContent="space-between"
+                alignItems="flex-end"
                 sx={{ mb: 2 }}
               >
                 <Chip
                   label={`Question ${currentIdx + 1} of ${questions.length}`}
-                  sx={{ bgcolor: "white", fontWeight: 700 }}
+                  sx={{
+                    bgcolor: "#1E293B",
+                    color: "white",
+                    fontWeight: 700,
+                    borderRadius: "8px",
+                  }}
                 />
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Timer
                     sx={{
                       color: timeLeft <= 10 ? "#EF4444" : "#6366F1",
-                      fontSize: 20,
+                      fontSize: 22,
                     }}
                   />
                   <Typography
                     sx={{
-                      fontWeight: 800,
+                      fontWeight: 900,
                       color: timeLeft <= 10 ? "#EF4444" : "#1E293B",
+                      fontSize: "1.1rem",
+                      fontFamily: "monospace",
                     }}
                   >
                     0:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
@@ -183,49 +216,55 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                 value={((currentIdx + 1) / questions.length) * 100}
                 sx={{
                   mb: 4,
-                  height: 8,
+                  height: 10,
                   borderRadius: 5,
                   bgcolor: alpha("#6366F1", 0.1),
-                  "& .MuiLinearProgress-bar": { bgcolor: "#6366F1" },
+                  "& .MuiLinearProgress-bar": {
+                    bgcolor: "#6366F1",
+                    borderRadius: 5,
+                  },
                 }}
               />
 
               <Paper
                 sx={{
                   p: { xs: 3, md: 5 },
-                  borderRadius: 6,
+                  borderRadius: "32px",
                   border: "1px solid #E2E8F0",
-                  boxShadow: "0 10px 25px -5px rgba(0,0,0,0.05)",
+                  boxShadow: "0 20px 25px -5px rgba(0,0,0,0.05)",
+                  bgcolor: "white",
                 }}
               >
-                <Typography
-                  variant="subtitle1"
-                  component="div"
-                  sx={{ fontWeight: 800, mb: 4, color: "#0F172A" }}
+                <Box
+                  sx={{
+                    fontSize: "1.25rem",
+                    color: "#1E293B",
+                    fontWeight: 500,
+                    mb: 4,
+                  }}
                 >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                  >
-                    {currentQuestion?.question}
-                  </ReactMarkdown>
-                </Typography>
+                  <MarkdownRenderer
+                    content={currentQuestion?.question}
+                    uniqueKey={`q-${currentIdx}`}
+                  />
+                </Box>
 
                 <Stack spacing={2}>
                   {currentQuestion?.options.map((option, i) => {
                     const isCorrect = i === currentQuestion.correctAnswer;
                     const isSelected = i === selectedAnswer;
 
-                    // Determine Button Color based on state
-                    let btnBorder = "#F1F5F9";
+                    let btnBorder = "#E2E8F0";
                     let btnBg = "white";
-                    if (isSelected) {
-                      btnBorder = isCorrect ? "#10B981" : "#EF4444";
-                      btnBg = isCorrect
-                        ? alpha("#10B981", 0.05)
-                        : alpha("#EF4444", 0.05);
-                    } else if (selectedAnswer !== null && isCorrect) {
-                      btnBorder = "#10B981"; // Highlight correct answer if user was wrong
+                    if (selectedAnswer !== null) {
+                      if (isSelected) {
+                        btnBorder = isCorrect ? "#10B981" : "#EF4444";
+                        btnBg = isCorrect
+                          ? alpha("#10B981", 0.08)
+                          : alpha("#EF4444", 0.08);
+                      } else if (isCorrect) {
+                        btnBorder = "#10B981"; // Show correct answer if user missed it
+                      }
                     }
 
                     return (
@@ -236,14 +275,19 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                         disabled={selectedAnswer !== null}
                         sx={{
                           p: 2.5,
-                          borderRadius: 4,
+                          borderRadius: "16px",
                           justifyContent: "flex-start",
                           textTransform: "none",
                           border: "2px solid",
                           borderColor: btnBorder,
                           bgcolor: btnBg,
-                          transition: "0.2s all ease",
-                          "&:hover": { bgcolor: "#F8FAFC" },
+                          color: "#334155",
+                          transition: "0.2s all",
+                          "&:hover": {
+                            bgcolor: "#F8FAFC",
+                            borderColor: "#6366F1",
+                          },
+                          "&.Mui-disabled": { color: "#334155" },
                         }}
                       >
                         <Stack
@@ -254,15 +298,21 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                         >
                           <Box
                             sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: 1.5,
+                              width: 36,
+                              height: 36,
+                              borderRadius: "10px",
                               bgcolor: isSelected
                                 ? isCorrect
                                   ? "#10B981"
                                   : "#EF4444"
-                                : "#F1F5F9",
-                              color: isSelected ? "white" : "#64748B",
+                                : selectedAnswer !== null && isCorrect
+                                  ? "#10B981"
+                                  : "#F1F5F9",
+                              color:
+                                isSelected ||
+                                (selectedAnswer !== null && isCorrect)
+                                  ? "white"
+                                  : "#64748B",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -279,37 +329,51 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                               String.fromCharCode(65 + i)
                             )}
                           </Box>
-                          <Typography
-                            sx={{
-                              flexGrow: 1,
-                              fontWeight: 600,
-                              textAlign: "left",
-                              color: "#1E293B",
-                            }}
-                          >
-                            <ReactMarkdown
-                              remarkPlugins={[remarkMath]}
-                              rehypePlugins={[rehypeKatex]}
-                            >
-                              {option}
-                            </ReactMarkdown>
-                          </Typography>
+                          <Box sx={{ textAlign: "left", flex: 1 }}>
+                            <MarkdownRenderer
+                              content={option}
+                              uniqueKey={`opt-${currentIdx}-${i}`}
+                            />
+                          </Box>
                         </Stack>
                       </Button>
                     );
                   })}
                 </Stack>
+
+                {selectedAnswer !== null && (
+                  <Fade in>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={handleNext}
+                      endIcon={<ArrowForward />}
+                      sx={{
+                        mt: 4,
+                        py: 2,
+                        borderRadius: "14px",
+                        fontWeight: 800,
+                        bgcolor: "#6366F1",
+                        boxShadow: "0 10px 15px -3px rgba(99, 102, 241, 0.3)",
+                      }}
+                    >
+                      {currentIdx < questions.length - 1
+                        ? "Next Question"
+                        : "Finish Quiz"}
+                    </Button>
+                  </Fade>
+                )}
               </Paper>
             </Box>
           ) : (
             <Box>
               {showReview ? (
-                <Zoom in={true}>
+                <Zoom in>
                   <Box>
                     <Button
                       startIcon={<Replay />}
                       onClick={() => setShowReview(false)}
-                      sx={{ mb: 3, fontWeight: 700 }}
+                      sx={{ mb: 3, fontWeight: 700, color: "#6366F1" }}
                     >
                       Back to Result
                     </Button>
@@ -317,79 +381,124 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                       <Paper
                         key={qIdx}
                         sx={{
-                          p: 3,
+                          p: 4,
                           mb: 3,
-                          borderRadius: 4,
+                          borderRadius: "24px",
                           border: "1px solid #E2E8F0",
                         }}
                       >
                         <Typography
                           variant="subtitle1"
-                          sx={{ fontWeight: 800, mb: 2 }}
+                          sx={{ fontWeight: 800, mb: 2, color: "#1E293B" }}
                         >
-                          {qIdx + 1}.{" "}
-                          <ReactMarkdown
-                            remarkPlugins={[remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                          >
-                            {q.question}
-                          </ReactMarkdown>
+                          Question {qIdx + 1}
                         </Typography>
+                        <Box sx={{ mb: 3 }}>
+                          <MarkdownRenderer
+                            content={q.question}
+                            uniqueKey={`review-q-${qIdx}`}
+                          />
+                        </Box>
+
+                        <Stack spacing={1.5} sx={{ mb: 3 }}>
+                          {q.options.map((opt, i) => {
+                            const isCorrect = i === q.correctAnswer;
+                            const wasSelected = i === userChoices[qIdx];
+                            return (
+                              <Box
+                                key={i}
+                                sx={{
+                                  p: 2,
+                                  borderRadius: "12px",
+                                  border: "1px solid",
+                                  borderColor: isCorrect
+                                    ? "#10B981"
+                                    : wasSelected
+                                      ? "#EF4444"
+                                      : "#F1F5F9",
+                                  bgcolor: isCorrect
+                                    ? alpha("#10B981", 0.05)
+                                    : wasSelected
+                                      ? alpha("#EF4444", 0.05)
+                                      : "transparent",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 2,
+                                }}
+                              >
+                                {isCorrect ? (
+                                  <CheckCircle sx={{ color: "#10B981" }} />
+                                ) : wasSelected ? (
+                                  <Cancel sx={{ color: "#EF4444" }} />
+                                ) : (
+                                  <Box sx={{ width: 24 }} />
+                                )}
+                                <MarkdownRenderer
+                                  content={opt}
+                                  uniqueKey={`review-opt-${qIdx}-${i}`}
+                                />
+                              </Box>
+                            );
+                          })}
+                        </Stack>
+
                         <Box
                           sx={{
                             p: 2,
                             bgcolor: "#F0F9FF",
-                            borderRadius: 3,
+                            borderRadius: "16px",
                             border: "1px dashed #0EA5E9",
-                            display: "flex",
-                            gap: 1.5,
                           }}
                         >
-                          <LightbulbCircle sx={{ color: "#0EA5E9" }} />
-                          <Typography variant="body2">
-                            {q.explanation}
-                          </Typography>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ mb: 1, color: "#0369A1" }}
+                          >
+                            <AssignmentTurnedIn fontSize="small" />
+                            <Typography
+                              variant="subtitle2"
+                              sx={{ fontWeight: 800 }}
+                            >
+                              Explanation
+                            </Typography>
+                          </Stack>
+                          <Box sx={{ color: "#0C4A6E", lineHeight: 1.6 }}>
+                            <MarkdownRenderer
+                              content={q.explanation}
+                              uniqueKey={`exp-${qIdx}`}
+                            />
+                          </Box>
                         </Box>
                       </Paper>
                     ))}
                   </Box>
                 </Zoom>
               ) : (
-                <Zoom in={true}>
+                <Zoom in>
                   <Paper
                     sx={{
-                      p: 6,
-                      borderRadius: 8,
+                      p: 8,
+                      borderRadius: "40px",
                       textAlign: "center",
                       border: "1px solid #E2E8F0",
+                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.08)",
                     }}
                   >
                     <EmojiEvents
-                      sx={{ fontSize: 80, color: "#F59E0B", mb: 2 }}
+                      sx={{ fontSize: 100, color: "#F59E0B", mb: 2 }}
                     />
                     <Typography
                       variant="h2"
-                      sx={{ fontWeight: 900, color: "#1E293B" }}
+                      sx={{ fontWeight: 900, color: "#1E293B", mb: 1 }}
                     >
                       {Math.round((score / questions.length) * 100)}%
                     </Typography>
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      justifyContent="center"
-                      sx={{ my: 4 }}
-                    >
-                      <Chip
-                        label={`${score} Correct`}
-                        color="success"
-                        sx={{ fontWeight: 800 }}
-                      />
-                      <Chip
-                        label={`${questions.length} Total`}
-                        sx={{ fontWeight: 800 }}
-                      />
-                    </Stack>
-                    <Stack spacing={2} sx={{ maxWidth: 300, mx: "auto" }}>
+                    <Typography variant="h6" sx={{ color: "#64748B", mb: 4 }}>
+                      You scored {score} out of {questions.length} questions
+                    </Typography>
+
+                    <Stack spacing={2} sx={{ maxWidth: 320, mx: "auto" }}>
                       <Button
                         fullWidth
                         variant="contained"
@@ -397,13 +506,13 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                         startIcon={<AssignmentTurnedIn />}
                         sx={{
                           py: 2,
-                          borderRadius: 4,
+                          borderRadius: "16px",
                           bgcolor: "#6366F1",
                           fontWeight: 800,
                           textTransform: "none",
                         }}
                       >
-                        Review Performance
+                        Review Answers
                       </Button>
                       <Button
                         fullWidth
@@ -412,12 +521,14 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                         startIcon={<Replay />}
                         sx={{
                           py: 2,
-                          borderRadius: 4,
+                          borderRadius: "16px",
                           fontWeight: 800,
                           textTransform: "none",
+                          color: "#64748B",
+                          borderColor: "#E2E8F0",
                         }}
                       >
-                        Retake Exam
+                        Try Again
                       </Button>
                     </Stack>
                   </Paper>

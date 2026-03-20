@@ -13,7 +13,7 @@ export default defineConfig({
         "PrepFlowMaskable512.png",
       ],
       manifest: {
-        name: "PrepFlow AI",
+        name: "PrepFlow",
         short_name: "PrepFlow",
         description: "Advanced AI Study Assistant for JAMB & WAEC",
         theme_color: "#6366F1",
