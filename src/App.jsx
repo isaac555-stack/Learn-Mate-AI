@@ -20,7 +20,8 @@ import { RocketLaunch } from "@mui/icons-material";
 
 function App() {
   const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Changed from 'loading' to 'isInitializing' for clarity
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const INDIGO = "#050614";
   const ACCENT = "#6366F1";
@@ -29,7 +30,7 @@ function App() {
     // 1. Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setLoading(false);
+      setIsInitializing(false);
     });
 
     // 2. Listen for auth changes
@@ -37,14 +38,15 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setLoading(false);
+      setIsInitializing(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // --- TOP-NOTCH LOADING SCREEN ---
-  if (loading) {
+  // --- INITIAL AUTH CHECK LOADING SCREEN ---
+  // This only shows while we aren't sure if the user is logged in or not.
+  if (isInitializing) {
     return (
       <Box
         sx={{
@@ -73,18 +75,6 @@ function App() {
           <RocketLaunch sx={{ color: "#FFF", fontSize: 32, opacity: 0.8 }} />
         </Box>
         <Typography
-          variant="h4"
-          sx={{
-            color: alpha("#FFF", 0.6),
-            fontWeight: 800,
-            letterSpacing: 1,
-            textTransform: "uppercase",
-            fontSize: "0.8rem",
-          }}
-        >
-          PrepFlow
-        </Typography>
-        <Typography
           variant="h6"
           sx={{
             color: alpha("#FFF", 0.6),
@@ -104,7 +94,9 @@ function App() {
     <Router>
       <ToastProvider>
         <Analytics />
-        <ReloadPrompt />
+
+        {/* FIX: Only show ReloadPrompt if user is logged in */}
+        {session && <ReloadPrompt />}
 
         <Box
           sx={{
@@ -130,7 +122,8 @@ function App() {
 
               <Route path="/legal" element={<Legal />} />
               <Route path="/contact" element={<ContactSection />} />
-              {/* Catch-all sends back to landing or dashboard depending on auth */}
+
+              {/* Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Box>
