@@ -7,7 +7,6 @@ import {
   Stack,
   Chip,
   Avatar,
-  Tooltip,
   TextField,
   InputAdornment,
   Dialog,
@@ -24,12 +23,9 @@ import {
   ListItemText,
 } from "@mui/material";
 import {
-  History,
   DeleteOutline,
-  School,
-  Book,
   Science,
-  MenuBook,
+  Book,
   Calculate,
   Search,
   Clear,
@@ -41,9 +37,9 @@ import {
   CloudOff,
   AccessTime,
   MoreVert,
+  MenuBook,
 } from "@mui/icons-material";
 
-// Subject styling logic
 const getSubjectStyle = (subject = "General") => {
   const map = {
     Biology: {
@@ -82,35 +78,46 @@ const getSubjectStyle = (subject = "General") => {
 };
 
 const LibraryTab = ({
-  savedNotes,
+  savedNotes = [],
   setSummary,
-
   setTab,
   deleteNote,
   handleLaunchQuiz,
 }) => {
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // States for Menu & Modals
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedNote, setSelectedNote] = useState(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [questionCount, setQuestionCount] = useState(10);
 
-  const subjects = ["All", ...new Set(savedNotes.map((n) => n.subject))];
+  const toTitle = (str) => {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  };
+
+  const subjects = [
+    "All",
+    ...new Set(savedNotes.map((n) => n.subject).filter(Boolean)),
+  ];
+
   const filteredNotes = savedNotes.filter((note) => {
     const matchesFilter = filter === "All" || note.subject === filter;
-    const matchesSearch =
-      note.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.subject?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    const query = searchQuery.toLowerCase();
+    return (
+      matchesFilter &&
+      (note.title?.toLowerCase().includes(query) ||
+        note.subject?.toLowerCase().includes(query))
+    );
   });
 
-  // Action Handlers
   const handleMenuOpen = (e, note) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Stops the Paper's onClick from firing
     setAnchorEl(e.currentTarget);
     setSelectedNote(note);
   };
@@ -123,7 +130,6 @@ const LibraryTab = ({
     handleMenuClose();
     setSetupOpen(true);
   };
-
   const triggerDeleteConfirm = () => {
     handleMenuClose();
     setDeleteConfirmOpen(true);
@@ -245,25 +251,23 @@ const LibraryTab = ({
                   {style.icon}
                 </Avatar>
 
-                <Box sx={{ flexGrow: 1 }}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography
-                      variant="subtitle1"
-                      sx={{
-                        fontWeight: 800,
-                        color: "#1E293B",
-                        fontSize: "0.95rem",
-                      }}
-                    >
-                      {note.title?.length > 25
-                        ? note.title.slice(0, 25) + "..."
-                        : note.title}
-                    </Typography>
-                  </Stack>
+                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                  <Typography
+                    variant="subtitle1"
+                    noWrap
+                    sx={{
+                      fontWeight: 800,
+                      color: "#1E293B",
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    {note.title}
+                  </Typography>
+
                   <Stack
                     direction="row"
                     spacing={1.5}
-                    alignItems="flex-start"
+                    alignItems="center"
                     sx={{ mt: 0.5 }}
                   >
                     <Typography
@@ -274,11 +278,13 @@ const LibraryTab = ({
                         bgcolor: alpha(style.color, 0.1),
                         px: 1,
                         borderRadius: "6px",
+                        maxWidth: "120px",
+                        textOverflow: "ellipsis",
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {note.subject?.length > 15
-                        ? note.subject.slice(0, 15) + "..."
-                        : note.subject}
+                      {toTitle(note.subject || "General")}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -296,10 +302,11 @@ const LibraryTab = ({
                     </Typography>
                   </Stack>
                 </Box>
+
                 {isLocal ? (
-                  <CloudOff sx={{ fontSize: 14, color: "#cbd5e1" }} />
+                  <CloudOff sx={{ fontSize: 14, color: "#cbd5e1", mx: 1 }} />
                 ) : (
-                  <CloudDone sx={{ fontSize: 14, color: "#10b981" }} />
+                  <CloudDone sx={{ fontSize: 14, color: "#10b981", mx: 1 }} />
                 )}
 
                 <IconButton onClick={(e) => handleMenuOpen(e, note)}>
@@ -309,7 +316,7 @@ const LibraryTab = ({
             </Fade>
           );
         })}
-        {/* --- EMPTY STATE VIEW --- */}
+
         {filteredNotes.length === 0 && (
           <Fade in timeout={600}>
             <Box
@@ -336,28 +343,26 @@ const LibraryTab = ({
               >
                 <MenuBook sx={{ fontSize: 40 }} />
               </Avatar>
-
               <Typography
                 variant="h6"
                 sx={{ fontWeight: 900, color: "#1E293B", mb: 1 }}
               >
                 {searchQuery ? "No matching notes" : "Your library is empty"}
               </Typography>
-
               <Typography
                 variant="body2"
                 sx={{ color: "#64748B", mb: 4, maxWidth: 280, mx: "auto" }}
               >
                 {searchQuery
-                  ? `We couldn't find anything for "${searchQuery}". Try a different search term.`
-                  : "Start creating study notes or upload documents to build your personal AI library!"}
+                  ? `No results for "${searchQuery}"`
+                  : "Start creating study notes to build your library!"}
               </Typography>
             </Box>
           </Fade>
         )}
       </Stack>
 
-      {/* --- QUICK ACTIONS MENU --- */}
+      {/* Quick Actions Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -368,7 +373,6 @@ const LibraryTab = ({
             mt: 1,
             boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
             minWidth: 180,
-            border: "1px solid #f1f5f9",
           },
         }}
       >
@@ -395,17 +399,16 @@ const LibraryTab = ({
         </MenuItem>
       </Menu>
 
-      {/* --- DELETE CONFIRMATION --- */}
+      {/* Delete Dialog */}
       <Dialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
         PaperProps={{ sx: { borderRadius: "24px", p: 1 } }}
       >
-        <DialogTitle sx={{ fontWeight: 900 }}>Delete this note?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 900 }}>Delete note?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to remove <b>{selectedNote?.title}</b>? This
-            action cannot be undone.
+            Remove <b>{selectedNote?.title}</b>? This cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ pb: 2, px: 3 }}>
@@ -425,12 +428,12 @@ const LibraryTab = ({
               "&:hover": { bgcolor: "#dc2626" },
             }}
           >
-            Delete Permanently
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* --- QUIZ SETUP MODAL --- */}
+      {/* Quiz Modal */}
       <Dialog
         open={setupOpen}
         onClose={() => setSetupOpen(false)}
@@ -462,6 +465,8 @@ const LibraryTab = ({
                   cursor: "pointer",
                   border: "2px solid",
                   textAlign: "center",
+                  transition: "0.2s",
+                  transform: questionCount === num ? "scale(1.05)" : "scale(1)",
                   borderColor: questionCount === num ? "#6366F1" : "#F1F5F9",
                   bgcolor:
                     questionCount === num ? alpha("#6366F1", 0.05) : "white",

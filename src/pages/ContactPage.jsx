@@ -1,18 +1,10 @@
-import {
-  WhatsApp,
-  MailOutline,
-  LocationOn,
-  ArrowBack,
-  Send,
-} from "@mui/icons-material";
+import { ArrowBack, Send } from "@mui/icons-material";
 import {
   Box,
   Container,
   Grid,
   Typography,
   alpha,
-  Stack,
-  Avatar,
   TextField,
   Button,
 } from "@mui/material";
@@ -21,12 +13,12 @@ import { useNavigate } from "react-router-dom";
 const ContactSection = () => {
   const navigate = useNavigate();
   const ACCENT = "#6366F1";
-  const INDIGO = "#050614";
+  const INDIGO = "#090b29";
 
   return (
     <Box sx={{ py: 8, bgcolor: INDIGO, color: "white" }}>
       <Container maxWidth="lg">
-        <Container sx={{ mb: 4 }}>
+        <Container maxWidth="lg" sx={{ mb: 4, p: 0 }}>
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate("/")}
@@ -36,7 +28,7 @@ const ContactSection = () => {
               fontWeight: 700,
             }}
           >
-            Back to PrepFlow
+            Back to Home
           </Button>
         </Container>
         <Grid container spacing={8}>
@@ -54,45 +46,9 @@ const ContactSection = () => {
             <Typography
               sx={{ color: alpha("#FFF", 0.6), mb: 6, fontSize: "1.1rem" }}
             >
-              Have questions about your subscription, technical issues, or just
-              want to say hi? Our team is a message away.
+              Have questions about technical issues, or just want to say hi? Our
+              team is a message away.
             </Typography>
-
-            <Stack spacing={4}>
-              <Stack direction="row" spacing={3} alignItems="center">
-                <Avatar sx={{ bgcolor: alpha(ACCENT, 0.1), color: ACCENT }}>
-                  <WhatsApp />
-                </Avatar>
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ color: alpha("#FFF", 0.4) }}
-                  >
-                    WhatsApp Support
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700}>
-                    +234 800 PREP FLOW
-                  </Typography>
-                </Box>
-              </Stack>
-
-              <Stack direction="row" spacing={3} alignItems="center">
-                <Avatar sx={{ bgcolor: alpha(ACCENT, 0.1), color: ACCENT }}>
-                  <MailOutline />
-                </Avatar>
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ color: alpha("#FFF", 0.4) }}
-                  >
-                    Email Us
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700}>
-                    hello@prepflow.ai
-                  </Typography>
-                </Box>
-              </Stack>
-            </Stack>
           </Grid>
 
           {/* --- RIGHT SIDE: FORM --- */}

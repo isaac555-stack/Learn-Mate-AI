@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 const Legal = () => {
   const navigate = useNavigate();
   const ACCENT = "#6366F1";
-  const INDIGO = "#050614";
+  const INDIGO = "#090b29";
 
   return (
     <Box sx={{ bgcolor: INDIGO, minHeight: "100vh", color: "#FFF", pb: 10 }}>
@@ -30,7 +30,7 @@ const Legal = () => {
             fontWeight: 700,
           }}
         >
-          Back to PrepFlow
+          Back to Home
         </Button>
       </Container>
 
@@ -39,7 +39,7 @@ const Legal = () => {
         <Box component="section" sx={{ mb: 10 }}>
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
             <Security sx={{ color: ACCENT, fontSize: 32 }} />
-            <Typography variant="h3" component="h1" fontWeight={900}>
+            <Typography variant="h4" component="h1" fontWeight={900}>
               Privacy Policy
             </Typography>
           </Stack>
@@ -122,7 +122,7 @@ const Legal = () => {
         <Box component="section">
           <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
             <Gavel sx={{ color: ACCENT, fontSize: 32 }} />
-            <Typography variant="h3" component="h2" fontWeight={900}>
+            <Typography variant="h4" component="h2" fontWeight={900}>
               Terms of Service
             </Typography>
           </Stack>

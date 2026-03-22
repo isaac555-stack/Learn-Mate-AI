@@ -22,7 +22,7 @@ const Footer = () => {
       sx={{
         py: 10,
         borderTop: `1px solid ${alpha("#FFF", 0.05)}`,
-        bgcolor: "rgb(2, 3, 28)", // Slightly darker than INDIGO for depth
+        bgcolor: "rgb(2, 3, 39)", // Slightly darker than INDIGO for depth
       }}
     >
       <Container maxWidth="lg">
@@ -155,10 +155,10 @@ const Footer = () => {
           spacing={2}
         >
           <Typography variant="caption" sx={{ color: alpha("#FFF", 0.5) }}>
-            © {new Date().getFullYear()} PrepFlow AI. All rights reserved.
+            © {new Date().getFullYear()} PrepFlow. All rights reserved.
           </Typography>
           <Typography variant="caption" sx={{ color: alpha("#FFF", 0.5) }}>
-            Powered by Ziko Technologies⚡ for the next generation of scholars.
+            Powered by Ziko Technologies⚡
           </Typography>
         </Stack>
       </Container>

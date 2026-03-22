@@ -53,11 +53,7 @@ const ControlBar = ({
     }}
   >
     <Container maxWidth="md" disableGutters>
-      <PagesPreview
-        pages={pages}
-        setPages={setPages}
-        onSelect={(idx) => console.log("Selected page:", idx)}
-      />
+      <PagesPreview pages={pages} setPages={setPages} />
 
       {/* Input / Ask Box */}
       <Stack direction="row" spacing={1.5} alignItems="center">

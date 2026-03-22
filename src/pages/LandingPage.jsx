@@ -39,7 +39,6 @@ import { motion } from "framer-motion";
 import LandingIcon from "../assets/image.png"; // Your generated image
 import { supabase } from "../services/questionsEngine";
 import Footer from "../components/Footer";
-import { useNavigate } from "react-router-dom";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
