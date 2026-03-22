@@ -21,6 +21,8 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import {
   DeleteOutline,
@@ -38,6 +40,7 @@ import {
   AccessTime,
   MoreVert,
   MenuBook,
+  Sync,
 } from "@mui/icons-material";
 
 const getSubjectStyle = (subject = "General") => {
@@ -83,6 +86,7 @@ const LibraryTab = ({
   setTab,
   deleteNote,
   handleLaunchQuiz,
+  refreshNotes, // Ensure you pass this from your useNotes hook
 }) => {
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,16 +95,17 @@ const LibraryTab = ({
   const [setupOpen, setSetupOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [questionCount, setQuestionCount] = useState(10);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const toTitle = (str) => {
-    if (!str) return "";
-    return str
-      .toLowerCase()
-      .split(" ")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-  };
-
+  const toTitle = (str) =>
+    !str
+      ? ""
+      : str
+          .toLowerCase()
+          .split(" ")
+          .filter(Boolean) // Removes extra spaces
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
   const subjects = [
     "All",
     ...new Set(savedNotes.map((n) => n.subject).filter(Boolean)),
@@ -116,15 +121,20 @@ const LibraryTab = ({
     );
   });
 
+  const handleRefresh = async () => {
+    if (!refreshNotes) return;
+    setIsRefreshing(true);
+    await refreshNotes();
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
   const handleMenuOpen = (e, note) => {
-    e.stopPropagation(); // Stops the Paper's onClick from firing
+    e.stopPropagation();
     setAnchorEl(e.currentTarget);
     setSelectedNote(note);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const handleMenuClose = () => setAnchorEl(null);
 
   const triggerQuizSetup = () => {
     handleMenuClose();
@@ -143,40 +153,70 @@ const LibraryTab = ({
 
   return (
     <Box sx={{ pb: 6, mt: 2 }}>
-      {/* Search Bar */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 0.5,
-          mb: 4,
-          borderRadius: "100px",
-          border: "1px solid #e2e8f0",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <TextField
-          fullWidth
-          variant="standard"
-          placeholder="Search your library..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            disableUnderline: true,
-            startAdornment: (
-              <InputAdornment position="start" sx={{ pl: 2 }}>
-                <Search sx={{ color: "#94a3b8" }} />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery && (
-              <IconButton size="small" onClick={() => setSearchQuery("")}>
-                <Clear fontSize="small" />
-              </IconButton>
-            ),
+      {/* Search Bar + Refresh Action */}
+      <Stack direction="row" spacing={1.5} sx={{ mb: 4 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 0.5,
+            borderRadius: "100px",
+            border: "1px solid #e2e8f0",
+            display: "flex",
+            alignItems: "center",
+            flex: 1,
+            bgcolor: "white",
           }}
-          sx={{ py: 1 }}
-        />
-      </Paper>
+        >
+          <TextField
+            fullWidth
+            variant="standard"
+            placeholder="Search your library..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              disableUnderline: true,
+              startAdornment: (
+                <InputAdornment position="start" sx={{ pl: 2 }}>
+                  <Search sx={{ color: "#94a3b8" }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchQuery && (
+                <IconButton size="small" onClick={() => setSearchQuery("")}>
+                  <Clear fontSize="small" />
+                </IconButton>
+              ),
+            }}
+            sx={{ py: 1 }}
+          />
+        </Paper>
+        <Tooltip title="Refresh Cloud Library">
+          <IconButton
+            onClick={handleRefresh}
+            sx={{
+              bgcolor: "white",
+              border: "1px solid #e2e8f0",
+              p: 1.5,
+              transition: "0.3s",
+              "&:active": { transform: "rotate(180deg)" },
+            }}
+          >
+            <Sync
+              sx={{
+                color: "#64748B",
+                animation: isRefreshing ? "spin 1s linear infinite" : "none",
+              }}
+            />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+
+      {/* CSS for the refresh spin */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       {/* Subject Chips */}
       <Stack
@@ -212,13 +252,15 @@ const LibraryTab = ({
       <Stack spacing={2}>
         {filteredNotes.map((note) => {
           const style = getSubjectStyle(note.subject);
-          const isLocal = typeof note.id === "number";
+          const isLocalOnly = typeof note.id === "number";
+          const isSyncing = note.isSyncing; // Flag from our updated useNotes hook
 
           return (
             <Fade in key={note.id}>
               <Paper
                 elevation={0}
                 onClick={() => {
+                  if (isSyncing) return;
                   setSummary(note.content);
                   setTab(0);
                 }}
@@ -227,13 +269,16 @@ const LibraryTab = ({
                   borderRadius: "24px",
                   bgcolor: "white",
                   border: "1px solid #f1f5f9",
-                  cursor: "pointer",
+                  cursor: isSyncing ? "default" : "pointer",
                   transition: "0.3s",
                   display: "flex",
                   alignItems: "center",
+                  opacity: isSyncing ? 0.6 : 1,
                   "&:hover": {
-                    transform: "translateY(-3px)",
-                    boxShadow: "0 10px 20px rgba(0,0,0,0.03)",
+                    transform: isSyncing ? "none" : "translateY(-3px)",
+                    boxShadow: isSyncing
+                      ? "none"
+                      : "0 10px 20px rgba(0,0,0,0.03)",
                     borderColor: alpha(style.color, 0.3),
                   },
                 }}
@@ -272,20 +317,23 @@ const LibraryTab = ({
                   >
                     <Typography
                       variant="caption"
+                      noWrap // Added: Prevents text from wrapping to a new line
                       sx={{
                         fontWeight: 800,
                         color: style.color,
                         bgcolor: alpha(style.color, 0.1),
                         px: 1,
                         borderRadius: "6px",
-                        maxWidth: "120px",
-                        textOverflow: "ellipsis",
+                        // Added constraints:
+                        maxWidth: "100px", // Limits width to roughly 10-12 chars depending on font
+                        display: "block",
                         overflow: "hidden",
-                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis", // Adds "..." if the text is too long
                       }}
                     >
                       {toTitle(note.subject || "General")}
                     </Typography>
+
                     <Typography
                       variant="caption"
                       sx={{
@@ -293,23 +341,39 @@ const LibraryTab = ({
                         display: "flex",
                         alignItems: "center",
                         gap: 0.5,
+                        whiteSpace: "nowrap", // Ensures the date doesn't get squashed
                       }}
                     >
-                      <AccessTime sx={{ fontSize: 12 }} />{" "}
+                      <AccessTime sx={{ fontSize: 12 }} />
                       {note.created_at
                         ? new Date(note.created_at).toLocaleDateString()
                         : "Recent"}
                     </Typography>
                   </Stack>
                 </Box>
+                {/* Cloud Status Indicator */}
+                <Box sx={{ mr: 1 }}>
+                  {isSyncing ? (
+                    <CircularProgress
+                      size={16}
+                      thickness={5}
+                      sx={{ color: "#6366F1" }}
+                    />
+                  ) : isLocalOnly ? (
+                    <Tooltip title="Local Save (Not Synced)">
+                      <CloudOff sx={{ fontSize: 16, color: "#cbd5e1" }} />
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="Synced to Cloud">
+                      <CloudDone sx={{ fontSize: 16, color: "#10b981" }} />
+                    </Tooltip>
+                  )}
+                </Box>
 
-                {isLocal ? (
-                  <CloudOff sx={{ fontSize: 14, color: "#cbd5e1", mx: 1 }} />
-                ) : (
-                  <CloudDone sx={{ fontSize: 14, color: "#10b981", mx: 1 }} />
-                )}
-
-                <IconButton onClick={(e) => handleMenuOpen(e, note)}>
+                <IconButton
+                  onClick={(e) => handleMenuOpen(e, note)}
+                  disabled={isSyncing}
+                >
                   <MoreVert />
                 </IconButton>
               </Paper>
@@ -318,179 +382,91 @@ const LibraryTab = ({
         })}
 
         {filteredNotes.length === 0 && (
-          <Fade in timeout={600}>
-            <Box
-              sx={{
-                textAlign: "center",
-                py: 8,
-                px: 3,
-                bgcolor: alpha("#6366F1", 0.03),
-                borderRadius: "32px",
-                border: "2px dashed",
-                borderColor: alpha("#6366F1", 0.1),
-                mt: 2,
-              }}
-            >
-              <Avatar
-                sx={{
-                  width: 80,
-                  height: 80,
-                  bgcolor: "white",
-                  color: "#6366F1",
-                  boxShadow: "0 10px 20px rgba(99, 102, 241, 0.1)",
-                  margin: "0 auto 24px",
-                }}
-              >
-                <MenuBook sx={{ fontSize: 40 }} />
-              </Avatar>
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 900, color: "#1E293B", mb: 1 }}
-              >
-                {searchQuery ? "No matching notes" : "Your library is empty"}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: "#64748B", mb: 4, maxWidth: 280, mx: "auto" }}
-              >
-                {searchQuery
-                  ? `No results for "${searchQuery}"`
-                  : "Start creating study notes to build your library!"}
-              </Typography>
-            </Box>
-          </Fade>
+          <Box sx={{ textAlign: "center", py: 8, opacity: 0.6 }}>
+            <MenuBook sx={{ fontSize: 48, mb: 2, color: "#6366F1" }} />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              No Notes Found
+            </Typography>
+            <Typography variant="body2">
+              Try a different search or create a new note.
+            </Typography>
+          </Box>
         )}
       </Stack>
 
-      {/* Quick Actions Menu */}
+      {/* --- MODALS & MENUS --- */}
+
+      {/* Action Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            borderRadius: "16px",
-            mt: 1,
-            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-            minWidth: 180,
-          },
-        }}
       >
-        <MenuItem onClick={triggerQuizSetup} sx={{ py: 1.5 }}>
+        <MenuItem onClick={triggerQuizSetup}>
           <ListItemIcon>
             <AutoAwesome fontSize="small" sx={{ color: "#6366F1" }} />
           </ListItemIcon>
           <ListItemText
             primary="Take AI Quiz"
-            primaryTypographyProps={{ fontWeight: 700, fontSize: "0.9rem" }}
+            primaryTypographyProps={{ fontWeight: 700 }}
           />
         </MenuItem>
-        <MenuItem
-          onClick={triggerDeleteConfirm}
-          sx={{ py: 1.5, color: "#ef4444" }}
-        >
+        <MenuItem onClick={triggerDeleteConfirm} sx={{ color: "#ef4444" }}>
           <ListItemIcon>
             <DeleteOutline fontSize="small" sx={{ color: "#ef4444" }} />
           </ListItemIcon>
           <ListItemText
             primary="Delete Note"
-            primaryTypographyProps={{ fontWeight: 700, fontSize: "0.9rem" }}
+            primaryTypographyProps={{ fontWeight: 700 }}
           />
         </MenuItem>
       </Menu>
 
-      {/* Delete Dialog */}
+      {/* Delete Confirmation */}
       <Dialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
-        PaperProps={{ sx: { borderRadius: "24px", p: 1 } }}
       >
-        <DialogTitle sx={{ fontWeight: 900 }}>Delete note?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 900 }}>Delete this note?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Remove <b>{selectedNote?.title}</b>? This cannot be undone.
+            This will permanently remove "{selectedNote?.title}" from your
+            library.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ pb: 2, px: 3 }}>
-          <Button
-            onClick={() => setDeleteConfirmOpen(false)}
-            sx={{ color: "#64748b", fontWeight: 700 }}
-          >
-            Cancel
-          </Button>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
           <Button
             onClick={confirmDelete}
             variant="contained"
-            sx={{
-              bgcolor: "#ef4444",
-              borderRadius: "12px",
-              fontWeight: 800,
-              "&:hover": { bgcolor: "#dc2626" },
-            }}
+            sx={{ bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" } }}
           >
             Delete
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Quiz Modal */}
+      {/* Quiz Setup Dialog */}
       <Dialog
         open={setupOpen}
         onClose={() => setSetupOpen(false)}
-        PaperProps={{ sx: { borderRadius: "32px", p: 2, maxWidth: 400 } }}
+        PaperProps={{ sx: { borderRadius: "32px", p: 2 } }}
       >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ mb: 2 }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 900 }}>
-            Quiz Density
-          </Typography>
-          <IconButton onClick={() => setSetupOpen(false)}>
-            <Close />
-          </IconButton>
+        <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
+          Quiz Density
+        </Typography>
+        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+          {[5, 10, 20].map((num) => (
+            <Button
+              key={num}
+              variant={questionCount === num ? "contained" : "outlined"}
+              onClick={() => setQuestionCount(num)}
+              sx={{ flex: 1, borderRadius: "16px", py: 2, fontWeight: 800 }}
+            >
+              {num} Qs
+            </Button>
+          ))}
         </Stack>
-        <Box sx={{ mb: 4 }}>
-          <Stack direction="row" spacing={2}>
-            {[5, 10, 20].map((num) => (
-              <Box
-                key={num}
-                onClick={() => setQuestionCount(num)}
-                sx={{
-                  flex: 1,
-                  p: 2,
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  border: "2px solid",
-                  textAlign: "center",
-                  transition: "0.2s",
-                  transform: questionCount === num ? "scale(1.05)" : "scale(1)",
-                  borderColor: questionCount === num ? "#6366F1" : "#F1F5F9",
-                  bgcolor:
-                    questionCount === num ? alpha("#6366F1", 0.05) : "white",
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  sx={{
-                    fontWeight: 900,
-                    color: questionCount === num ? "#6366F1" : "#1E293B",
-                  }}
-                >
-                  {num}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ fontWeight: 800, color: "#94A3B8" }}
-                >
-                  QUES
-                </Typography>
-              </Box>
-            ))}
-          </Stack>
-        </Box>
         <Button
           fullWidth
           variant="contained"

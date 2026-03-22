@@ -24,7 +24,9 @@ const Scanner = () => {
   const [pages, setPages] = useState([]);
   const [cards, setCards] = useState([]);
   const [metadata, setMetadata] = useState(null);
-  const { savedNotes, saveNote, deleteNote } = useNotes();
+
+  // Extract refreshNotes (which we defined as fetchNotes in useNotes)
+  const { savedNotes, saveNote, deleteNote, refreshNotes } = useNotes();
 
   // --- Quiz States ---
   const [isQuizLoading, setIsQuizLoading] = useState(false);
@@ -35,6 +37,7 @@ const Scanner = () => {
   const startQuiz = async (note, count) => {
     setIsQuizLoading(true);
     try {
+      // note.content is the context for the AI
       const questions = await generateQuiz(note.content, count);
 
       setActiveQuiz(questions);
@@ -42,17 +45,17 @@ const Scanner = () => {
       setQuizOpen(true);
     } catch (err) {
       console.error("Failed to generate quiz:", err);
-      // Peer tip: Always good to reset loading even on error
+      // Optional: Add a toast error here if your AI service fails
     } finally {
       setIsQuizLoading(false);
     }
   };
+
   return (
     <Box
       sx={{
         bgcolor: "#fbfbfb",
         minHeight: "100vh",
-
         m: 0,
         backgroundImage: `
           radial-gradient(circle at 10% 20%, ${alpha("#6366F1", 0.05)} 0%, transparent 20%),
@@ -101,7 +104,9 @@ const Scanner = () => {
           </Typography>
         </Stack>
       </Backdrop>
-      <HeaderSection tab={tab} setTab={setTab} />{" "}
+
+      <HeaderSection tab={tab} setTab={setTab} />
+
       <Container maxWidth="md" sx={{ pt: { xs: 14, md: 16 }, pb: { xs: 6 } }}>
         <Box sx={{ position: "relative" }}>
           {tab === 0 ? (
@@ -125,12 +130,12 @@ const Scanner = () => {
               <Box>
                 <LibraryTab
                   savedNotes={savedNotes}
+                  refreshNotes={refreshNotes} // Missing link added here
                   deleteNote={deleteNote}
                   setSummary={(content) => {
                     setSummary(content);
                     setTab(0);
                   }}
-                  // Connect LibraryTab's internal modal to the startQuiz logic
                   handleLaunchQuiz={startQuiz}
                 />
               </Box>
@@ -142,11 +147,11 @@ const Scanner = () => {
         {quizOpen && (
           <QuizModal
             open={quizOpen}
-            questions={activeQuiz} // activeQuiz is now the array [{}, {}, ...]
+            questions={activeQuiz}
             topic={quizTopic}
             onClose={() => {
               setQuizOpen(false);
-              setActiveQuiz([]); // Clear quiz when closed to free up memory
+              setActiveQuiz([]);
             }}
           />
         )}

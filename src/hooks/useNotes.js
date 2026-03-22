@@ -15,7 +15,7 @@ export const useNotes = () => {
   };
 
   // 1. Fetch Cloud Notes
-  const fetchNotes = useCallback(async (isMounted) => {
+  const fetchNotes = useCallback(async (isMounted = true) => {
     try {
       const { data, error } = await supabase
         .from("user_notes")
@@ -34,13 +34,12 @@ export const useNotes = () => {
     }
   }, []);
 
-  // 2. Migration Logic (Fixed to prevent duplicates)
+  // 2. Migration Logic
   const syncLegacyNotesToCloud = useCallback(
     async (userId, notes, isMounted) => {
       if (isSyncing.current || notes.length === 0) return;
       isSyncing.current = true;
 
-      // STEP 1: Immediately remove from localStorage so second render sees nothing
       localStorage.removeItem("study_notes");
 
       if (isMounted) showToast("Syncing offline notes... 🔄");
@@ -60,12 +59,10 @@ export const useNotes = () => {
           .insert(formattedNotes);
         if (error) throw error;
 
-        // STEP 2: Now that they are safe in cloud, fetch the official list
         await fetchNotes(isMounted);
         if (isMounted) showToast("Cloud sync complete! ☁️");
       } catch (error) {
         console.error("Migration error:", error.message);
-        // If it actually failed, restore the notes to local storage
         localStorage.setItem("study_notes", JSON.stringify(notes));
         isSyncing.current = false;
       }
@@ -89,8 +86,6 @@ export const useNotes = () => {
         if (user) {
           const localData = localStorage.getItem("study_notes");
           const legacyNotes = localData ? JSON.parse(localData) : [];
-
-          // Only sync if there are "Guest" notes (numeric IDs)
           const hasLocalOnly = legacyNotes.some(
             (n) => typeof n.id === "number",
           );
@@ -119,19 +114,17 @@ export const useNotes = () => {
   const saveNote = async (content, metadata) => {
     if (!content?.trim()) return;
 
-    // Use an optimistic ID so we can show "Syncing..." in UI
     const tempId = Date.now();
     const baseNote = {
-      id: tempId, // Temporary
+      id: tempId,
       content,
       title: metadata?.title || metadata?.topic || "New Study Note",
       subject: metadata?.subject || "General",
       topic: metadata?.topic || "Revision",
       created_at: new Date().toISOString(),
-      isSyncing: true, // Visual flag
+      isSyncing: true,
     };
 
-    // Update UI immediately (Optimistic)
     setSavedNotes((prev) => [baseNote, ...prev]);
 
     const {
@@ -141,9 +134,11 @@ export const useNotes = () => {
 
     if (!user) {
       const finalNote = { ...baseNote, isSyncing: false };
-      const updated = [finalNote, ...savedNotes];
-      setSavedNotes(updated);
-      syncToLocal(updated);
+      setSavedNotes((prev) => {
+        const updated = [finalNote, ...prev.filter((n) => n.id !== tempId)];
+        syncToLocal(updated);
+        return updated;
+      });
       showToast("Saved locally. 🔐");
       return;
     }
@@ -164,17 +159,13 @@ export const useNotes = () => {
 
       if (error) throw error;
 
-      // Replace the temp optimistic note with the real DB note
-      setSavedNotes((prev) => prev.map((n) => (n.id === tempId ? data[0] : n)));
-      // Sync the whole list to cache
-      const { data: allNotes } = await supabase
-        .from("user_notes")
-        .select("*")
-        .order("created_at", { ascending: false });
-      syncToLocal(allNotes);
+      setSavedNotes((prev) => {
+        const updated = prev.map((n) => (n.id === tempId ? data[0] : n));
+        syncToLocal(updated);
+        return updated;
+      });
       showToast("Saved to cloud! ☁️");
     } catch (error) {
-      // Keep it as a local note if cloud fails
       setSavedNotes((prev) =>
         prev.map((n) => (n.id === tempId ? { ...n, isSyncing: false } : n)),
       );
@@ -204,5 +195,12 @@ export const useNotes = () => {
     }
   };
 
-  return { savedNotes, saveNote, deleteNote, loading };
+  // ADDED: Return fetchNotes as refreshNotes
+  return {
+    savedNotes,
+    saveNote,
+    deleteNote,
+    loading,
+    refreshNotes: fetchNotes,
+  };
 };
