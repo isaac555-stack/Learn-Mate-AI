@@ -1,13 +1,13 @@
 import { useState } from "react";
 import {
   Container,
-  Typography,
   Box,
   Fade,
-  Avatar,
   Stack,
   Backdrop,
   CircularProgress,
+  Typography,
+  Avatar,
   alpha,
 } from "@mui/material";
 import { useNotes } from "../hooks/useNotes";
@@ -15,7 +15,6 @@ import HeaderSection from "./HeaderSection";
 import ScannerTab from "./ScannerTab";
 import LibraryTab from "./LibraryTab";
 import QuizModal from "./QuizModal";
-
 import { generateQuiz } from "../services/aiService";
 
 const Scanner = () => {
@@ -25,7 +24,10 @@ const Scanner = () => {
   const [cards, setCards] = useState([]);
   const [metadata, setMetadata] = useState(null);
 
-  // Extract refreshNotes (which we defined as fetchNotes in useNotes)
+  // --- CRITICAL NEW STATE ---
+  // This stores the UUID from Supabase so the ScannerTab knows which note to update
+  const [scanSessionId, setScanSessionId] = useState(null);
+
   const { savedNotes, saveNote, deleteNote, refreshNotes } = useNotes();
 
   // --- Quiz States ---
@@ -37,15 +39,12 @@ const Scanner = () => {
   const startQuiz = async (note, count) => {
     setIsQuizLoading(true);
     try {
-      // note.content is the context for the AI
       const questions = await generateQuiz(note.content, count);
-
       setActiveQuiz(questions);
       setQuizTopic(note.title || note.topic || "Quiz");
       setQuizOpen(true);
     } catch (err) {
       console.error("Failed to generate quiz:", err);
-      // Optional: Add a toast error here if your AI service fails
     } finally {
       setIsQuizLoading(false);
     }
@@ -63,7 +62,6 @@ const Scanner = () => {
         `,
       }}
     >
-      {/* Immersive AI Loader */}
       <Backdrop
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 999,
@@ -93,14 +91,8 @@ const Scanner = () => {
               }}
             />
           </Box>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}
-          >
+          <Typography variant="h5" sx={{ fontWeight: 900 }}>
             Analyzing content...
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            PrepFlow AI is generating your questions.
           </Typography>
         </Stack>
       </Backdrop>
@@ -122,6 +114,9 @@ const Scanner = () => {
                   setMetadata={setMetadata}
                   cards={cards}
                   setCards={setCards}
+                  // Pass the Session ID states here
+                  scanSessionId={scanSessionId}
+                  setScanSessionId={setScanSessionId}
                 />
               </Box>
             </Fade>
@@ -130,20 +125,20 @@ const Scanner = () => {
               <Box>
                 <LibraryTab
                   savedNotes={savedNotes}
-                  refreshNotes={refreshNotes} // Missing link added here
+                  refreshNotes={refreshNotes}
                   deleteNote={deleteNote}
-                  setSummary={(content) => {
-                    setSummary(content);
-                    setTab(0);
-                  }}
                   handleLaunchQuiz={startQuiz}
+                  // Hydration props for LibraryTab
+                  setSummary={setSummary}
+                  setMetadata={setMetadata}
+                  setScanSessionId={setScanSessionId}
+                  setTab={setTab}
                 />
               </Box>
             </Fade>
           )}
         </Box>
 
-        {/* The Quiz CBT Experience */}
         {quizOpen && (
           <QuizModal
             open={quizOpen}

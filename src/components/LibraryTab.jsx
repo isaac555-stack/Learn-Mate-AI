@@ -32,7 +32,6 @@ import {
   Search,
   Clear,
   PlayArrow,
-  Close,
   AutoAwesome,
   AutoFixHigh,
   CloudDone,
@@ -85,8 +84,10 @@ const LibraryTab = ({
   setSummary,
   setTab,
   deleteNote,
+  setMetadata, // Correctly received from Parent
+  setScanSessionId, // Correctly received from Parent
   handleLaunchQuiz,
-  refreshNotes, // Ensure you pass this from your useNotes hook
+  refreshNotes,
 }) => {
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,9 +104,10 @@ const LibraryTab = ({
       : str
           .toLowerCase()
           .split(" ")
-          .filter(Boolean) // Removes extra spaces
+          .filter(Boolean)
           .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
           .join(" ");
+
   const subjects = [
     "All",
     ...new Set(savedNotes.map((n) => n.subject).filter(Boolean)),
@@ -128,6 +130,29 @@ const LibraryTab = ({
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
+  /**
+   * Refactored: Opens a note and hydrates all necessary session state
+   */
+  const handleOpenNote = (note) => {
+    if (note.isSyncing) return;
+
+    // 1. Load the text content
+    setSummary(note.content);
+
+    // 2. Load the Supabase UUID so Deep Dives know which row to update
+    setScanSessionId(note.id);
+
+    // 3. Load metadata so the ControlBar and AI have context
+    setMetadata({
+      title: note.title,
+      subject: note.subject,
+      topic: note.topic,
+    });
+
+    // 4. Switch to the Scanner/Viewer tab
+    setTab(0);
+  };
+
   const handleMenuOpen = (e, note) => {
     e.stopPropagation();
     setAnchorEl(e.currentTarget);
@@ -135,7 +160,6 @@ const LibraryTab = ({
   };
 
   const handleMenuClose = () => setAnchorEl(null);
-
   const triggerQuizSetup = () => {
     handleMenuClose();
     setSetupOpen(true);
@@ -153,7 +177,6 @@ const LibraryTab = ({
 
   return (
     <Box sx={{ pb: 6, mt: 2 }}>
-      {/* Search Bar + Refresh Action */}
       <Stack direction="row" spacing={1.5} sx={{ mb: 4 }}>
         <Paper
           elevation={0}
@@ -197,7 +220,6 @@ const LibraryTab = ({
               border: "1px solid #e2e8f0",
               p: 1.5,
               transition: "0.3s",
-              "&:active": { transform: "rotate(180deg)" },
             }}
           >
             <Sync
@@ -210,15 +232,8 @@ const LibraryTab = ({
         </Tooltip>
       </Stack>
 
-      {/* CSS for the refresh spin */}
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
-      {/* Subject Chips */}
       <Stack
         direction="row"
         spacing={1.5}
@@ -248,22 +263,17 @@ const LibraryTab = ({
         ))}
       </Stack>
 
-      {/* Notes List */}
       <Stack spacing={2}>
         {filteredNotes.map((note) => {
           const style = getSubjectStyle(note.subject);
           const isLocalOnly = typeof note.id === "number";
-          const isSyncing = note.isSyncing; // Flag from our updated useNotes hook
+          const isSyncing = note.isSyncing;
 
           return (
             <Fade in key={note.id}>
               <Paper
                 elevation={0}
-                onClick={() => {
-                  if (isSyncing) return;
-                  setSummary(note.content);
-                  setTab(0);
-                }}
+                onClick={() => handleOpenNote(note)}
                 sx={{
                   p: 2,
                   borderRadius: "24px",
@@ -317,18 +327,17 @@ const LibraryTab = ({
                   >
                     <Typography
                       variant="caption"
-                      noWrap // Added: Prevents text from wrapping to a new line
+                      noWrap
                       sx={{
                         fontWeight: 800,
                         color: style.color,
                         bgcolor: alpha(style.color, 0.1),
                         px: 1,
                         borderRadius: "6px",
-                        // Added constraints:
-                        maxWidth: "100px", // Limits width to roughly 10-12 chars depending on font
+                        maxWidth: "100px",
                         display: "block",
                         overflow: "hidden",
-                        textOverflow: "ellipsis", // Adds "..." if the text is too long
+                        textOverflow: "ellipsis",
                       }}
                     >
                       {toTitle(note.subject || "General")}
@@ -341,7 +350,7 @@ const LibraryTab = ({
                         display: "flex",
                         alignItems: "center",
                         gap: 0.5,
-                        whiteSpace: "nowrap", // Ensures the date doesn't get squashed
+                        whiteSpace: "nowrap",
                       }}
                     >
                       <AccessTime sx={{ fontSize: 12 }} />
@@ -351,7 +360,7 @@ const LibraryTab = ({
                     </Typography>
                   </Stack>
                 </Box>
-                {/* Cloud Status Indicator */}
+
                 <Box sx={{ mr: 1 }}>
                   {isSyncing ? (
                     <CircularProgress
@@ -393,8 +402,6 @@ const LibraryTab = ({
           </Box>
         )}
       </Stack>
-
-      {/* --- MODALS & MENUS --- */}
 
       {/* Action Menu */}
       <Menu

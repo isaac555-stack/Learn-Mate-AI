@@ -33,13 +33,18 @@ const ControlBar = ({
   onOpenCamera,
   setPages,
   isAnalyzing,
+  isDeepDiving,
+  scanSessionId, // CRITICAL: Received from ScannerTab
 }) => {
+  // Refactored to pass the scanSessionId (the Supabase UUID)
   const handleManualSave = () => {
     if (saveSummary && summary) {
-      // Pass the scanSessionId to ensure it overwrites/updates correctly
-      saveSummary(summary, metadata);
+      // The third argument ensures Supabase performs an UPDATE (Upsert)
+      saveSummary(summary, metadata, scanSessionId);
     }
   };
+
+  const isProcessing = isAnalyzing || isDeepDiving;
 
   return (
     <Box
@@ -51,10 +56,11 @@ const ControlBar = ({
         backdropFilter: "blur(20px)",
         left: "50%",
         transform: "translateX(-50%)",
-        width: { xs: "92%", md: "auto" },
+        width: { xs: "85%", md: "auto" },
         minWidth: { md: "700px" },
         py: 1.2,
         mb: { xs: 2, md: 3 },
+
         px: 2,
         zIndex: 1000,
         border: "1px solid rgba(0, 0, 0, 0.1)",
@@ -66,13 +72,11 @@ const ControlBar = ({
         <PagesPreview pages={pages} setPages={setPages} />
 
         <Stack direction="row" spacing={1.5} alignItems="center">
-          {/* Input / Ask Box */}
           <Box
             sx={{
               flexGrow: 1,
               display: "flex",
               alignItems: "center",
-
               borderRadius: "32px",
               px: 2,
               py: 0.5,
@@ -89,7 +93,7 @@ const ControlBar = ({
                   ? "Ask a follow-up question..."
                   : "Snap your notes to start"
               }
-              disabled={!summary || isAnalyzing}
+              disabled={!summary || isProcessing}
               value={userQuery}
               onChange={(e) => setUserQuery(e.target.value)}
               onKeyPress={(e) => {
@@ -105,7 +109,7 @@ const ControlBar = ({
             {summary ? (
               <IconButton
                 onClick={handleExplain}
-                disabled={!userQuery.trim() || isAnalyzing}
+                disabled={!userQuery.trim() || isProcessing}
                 sx={{
                   transition: "0.2s",
                   "&:hover": { transform: "scale(1.1)" },
@@ -125,7 +129,7 @@ const ControlBar = ({
                   textTransform: "none",
                   fontWeight: 900,
                   px: 4,
-                  bgcolor: "#000", // High contrast
+                  bgcolor: "#000",
                   "&:hover": { bgcolor: "#333" },
                 }}
               >
@@ -134,10 +138,10 @@ const ControlBar = ({
             )}
           </Box>
 
-          {/* Camera Button (Standalone if no summary, alongside if summary exists) */}
           {!summary && (
             <IconButton
               onClick={onOpenCamera}
+              disabled={isAnalyzing}
               sx={{
                 bgcolor: "#000",
                 color: "#fff",
@@ -149,7 +153,6 @@ const ControlBar = ({
           )}
         </Stack>
 
-        {/* Action Bar (Only shows after summary is generated) */}
         {summary && (
           <Stack
             direction="row"
@@ -160,8 +163,9 @@ const ControlBar = ({
             <Stack direction="row" spacing={1}>
               <Chip
                 icon={<Save sx={{ fontSize: "18px !important" }} />}
-                label="Save Sync"
+                label={isProcessing ? "Syncing..." : "Save Sync"}
                 onClick={handleManualSave}
+                disabled={isProcessing}
                 sx={{
                   borderRadius: "12px",
                   bgcolor: "white",
@@ -175,6 +179,7 @@ const ControlBar = ({
                 icon={isSpeaking ? <Stop /> : <VolumeUp />}
                 label={isSpeaking ? "Stop" : "Listen"}
                 onClick={handleSpeech}
+                disabled={isProcessing}
                 sx={{
                   borderRadius: "12px",
                   fontWeight: 700,
@@ -193,6 +198,7 @@ const ControlBar = ({
             <Tooltip title="Start New Scan">
               <IconButton
                 onClick={onOpenCamera}
+                disabled={isProcessing}
                 sx={{
                   bgcolor: alpha("#64748b", 0.1),
                   color: "#475569",

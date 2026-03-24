@@ -12,45 +12,46 @@ import {
 import {
   MenuBook,
   Psychology,
-  AutoAwesome,
-  AssignmentTurnedIn,
+  CloudDone,
+  CloudSync,
 } from "@mui/icons-material";
-import FlashcardSection from "./Flashcard";
-import QuizSection from "./QuizSection"; // We will build this next
 import TypewriterEffect from "./TypewriterEffect";
-import { aurora } from "../services/animation";
 
 const SummaryView = ({
   summary,
   metadata,
   isDeepDiving,
   scanSessionId,
-
   isLoadingQuestions,
+  // Pass this down if you want to show a 'Saved' vs 'Saving' state
+  isSyncing = false,
 }) => {
   const scrollRef = useRef(null);
   const [userIsScrolling, setUserIsScrolling] = useState(false);
 
+  // Auto-scroll logic: Keep the newest AI response in view
   useEffect(() => {
-    if (!userIsScrolling) {
-      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!userIsScrolling && isDeepDiving) {
+      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [summary]);
+  }, [summary, isDeepDiving, userIsScrolling]);
 
   const handleWheel = () => {
     setUserIsScrolling(true);
-    setTimeout(() => setUserIsScrolling(false), 3000);
+    // Resume auto-scroll after 5 seconds of inactivity
+    const timer = setTimeout(() => setUserIsScrolling(false), 5000);
+    return () => clearTimeout(timer);
   };
 
   return (
     <Fade in timeout={800}>
       <Box onWheel={handleWheel} sx={{ position: "relative" }}>
-        {/* 1. TOP METADATA BAR */}
+        {/* 1. TOP METADATA & STATUS BAR */}
         {metadata && (
           <Stack
             direction="row"
             justifyContent="space-between"
-            sx={{ px: { xs: 1, md: 3 }, alignItems: "center" }}
+            sx={{ px: { xs: 1, md: 3 }, mb: 2, alignItems: "center" }}
           >
             <Stack
               direction={{ xs: "column", md: "row" }}
@@ -58,18 +59,13 @@ const SummaryView = ({
               alignItems={{ xs: "flex-start", md: "center" }}
             >
               <Chip
-                icon={
-                  <MenuBook
-                    sx={{ fontSize: "1rem !important", fill: "#FFF" }}
-                  />
-                }
                 label={metadata.subject || "General Study"}
                 size="small"
                 sx={{
                   fontWeight: 900,
-                  bgcolor: "#6366F1",
-                  color: "white",
+                  color: "#64748b",
                   letterSpacing: 1,
+                  borderRadius: "8px",
                 }}
               />
               <Typography
@@ -80,22 +76,50 @@ const SummaryView = ({
               </Typography>
             </Stack>
 
-            {/* SYNC INDICATOR: Tells student we are fetching JAMB questions */}
-            {isLoadingQuestions && (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <CircularProgress
-                  size={12}
-                  thickness={6}
-                  sx={{ color: "#6366F1" }}
-                />
-                <Typography
-                  variant="caption"
-                  sx={{ color: "#6366F1", fontWeight: 800 }}
-                >
-                  Syncing JAMB Questions...
-                </Typography>
+            {/* SYNC INDICATORS */}
+            <Stack direction="row" spacing={2} alignItems="center">
+              {/* Cloud Sync State */}
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                {isDeepDiving || isSyncing ? (
+                  <>
+                    <CloudSync sx={{ fontSize: 16, color: "#6366F1" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "#6366F1", fontWeight: 800 }}
+                    >
+                      Syncing...
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <CloudDone sx={{ fontSize: 16, color: "#10B981" }} />
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "#10B981", fontWeight: 800 }}
+                    >
+                      Saved
+                    </Typography>
+                  </>
+                )}
               </Stack>
-            )}
+
+              {/* JAMB Syncing */}
+              {isLoadingQuestions && (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress
+                    size={12}
+                    thickness={6}
+                    sx={{ color: "#6366F1" }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "#6366F1", fontWeight: 800 }}
+                  >
+                    JAMB Sync
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
           </Stack>
         )}
 
@@ -104,56 +128,56 @@ const SummaryView = ({
           sx={{
             p: { xs: 2, md: 5 },
             borderRadius: "32px",
-            bgcolor: "rgba(255, 255, 255, 0)",
+            bgcolor: alpha("#F8FAFC", 0.5), // Subtle off-white background
+
             minHeight: "60vh",
             position: "relative",
             overflow: "hidden",
           }}
         >
-          {/* 2. THE CONTENT */}
+          {/* 2. THE CONTENT (Typewriter creates the 'AI is typing' feel) */}
           <TypewriterEffect key={scanSessionId} text={summary} />
 
-          {/* 3. FLASHCARDS */}
-
-          {/* 4. THE QUIZ SECTION (The Market Dominator)
-          {(questions.length > 0 || isLoadingQuestions) && (
-            <Box sx={{ mt: 4 }}>
-              <QuizSection
-                questions={questions}
-                isLoading={isLoadingQuestions}
-                subject={metadata?.subject}
-              />
-            </Box>
-          )} */}
-
-          <div ref={scrollRef} style={{ height: "20px" }} />
-
-          {/* 5. DEEP DIVE ANIMATION */}
+          {/* 3. DEEP DIVE LOADING STATE */}
           {isDeepDiving && (
             <Fade in>
               <Box
                 sx={{
-                  p: 2,
-                  mb: 5,
+                  p: 3,
+                  mt: 4,
                   borderRadius: "20px",
-                  bgcolor: alpha("#6366F1", 0.03),
+                  bgcolor: alpha("#6366F1", 0.05),
                   border: "1px dashed",
-                  borderColor: alpha("#6366F1", 0.2),
+                  borderColor: alpha("#6366F1", 0.3),
                   display: "flex",
                   alignItems: "center",
                   gap: 2,
                 }}
               >
-                <Psychology sx={{ color: "#6366F1" }} />
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 700, color: "#6366F1" }}
-                >
-                  PrepFlow is deep-diving into your question...
-                </Typography>
+                <Psychology
+                  className="pulse-animation"
+                  sx={{ color: "#6366F1", fontSize: 32 }}
+                />
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 800, color: "#6366F1" }}
+                  >
+                    PrepFlow is Deep-Diving...
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "#6366F1", opacity: 0.8 }}
+                  >
+                    Connecting your notes to the exam syllabus
+                  </Typography>
+                </Box>
               </Box>
             </Fade>
           )}
+
+          {/* Scroll Anchor */}
+          <div ref={scrollRef} style={{ height: "40px" }} />
         </Paper>
       </Box>
     </Fade>

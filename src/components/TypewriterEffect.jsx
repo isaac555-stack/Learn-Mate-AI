@@ -177,7 +177,7 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
             fontSize: "1.0rem",
           },
           "& h3": {
-            color: "#1a73e8",
+            color: "#0d0e10",
             mt: 2,
             mb: 1,
             fontSize: "1.0rem",

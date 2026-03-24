@@ -7,10 +7,9 @@ import ControlBar from "./ControlBar";
 import EmptyState from "./EmptyState";
 import { speak, stopSpeech } from "../services/speechService";
 import { explainFurther, processNotes } from "../services/aiService";
-import { getQuestionsForSubject } from "../services/questionsEngine"; // Your new engine
+import { getQuestionsForSubject } from "../services/questionsEngine";
 import { pulse, shimmer } from "../services/animation";
 
-/* --- MAIN SCANNER TAB --- */
 const ScannerTab = ({
   summary,
   setSummary,
@@ -21,6 +20,9 @@ const ScannerTab = ({
   setMetadata,
   cards,
   setCards,
+  // 1. Receive shared state from Parent (Scanner.jsx)
+  scanSessionId,
+  setScanSessionId,
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDeepDiving, setIsDeepDiving] = useState(false);
@@ -28,50 +30,59 @@ const ScannerTab = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [userQuery, setUserQuery] = useState("");
 
-  // New States for the Question Engine
   const [questions, setQuestions] = useState([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
 
-  const [scanSessionId, setScanSessionId] = useState("initial");
   const webcamRef = useRef(null);
 
-  const generateScanId = () =>
-    window.crypto?.randomUUID?.() || Date.now().toString(36);
-
+  /**
+   * ACTION: Capture and Reset
+   */
   const capturePhoto = useCallback(() => {
     const imageSrc = webcamRef.current.getScreenshot();
     if (!imageSrc) return;
     const base64Clean = imageSrc.split(",")[1];
     setPages((prev) => [...prev, base64Clean]);
     setIsCapturing(false);
+
+    // 2. Clear previous session data if starting a brand new scan
     if (summary) {
       setSummary("");
       setMetadata(null);
-      setQuestions([]); // Clear old questions on new scan
+      setQuestions([]);
+      setScanSessionId(null); // Critical: Tells the app this is a new note
     }
-  }, [summary, setPages, setSummary, setMetadata]);
+  }, [summary, setPages, setSummary, setMetadata, setScanSessionId]);
 
   /**
-   * CORE LOGIC: Summarize + Fetch Questions
+   * ACTION: Primary AI Analysis & Initial Save
    */
   const onFinishAndSummarize = async () => {
     if (pages.length === 0) return;
     setIsAnalyzing(true);
 
     try {
-      // 1. Process notes with Gemini
       const result = await processNotes(pages);
 
       if (result) {
         setSummary(result.summaryText);
         setMetadata(result.metadata);
-        setScanSessionId(generateScanId());
         setPages([]);
 
-        // 2. Immediate Background Fetch for JAMB/WAEC Questions
+        // 3. Save to DB and store the returned UUID for future Deep Dives
+        const realId = await saveSummary(
+          result.summaryText,
+          result.metadata,
+          null, // Passing null tells saveSummary to "INSERT"
+        );
+
+        if (realId) {
+          setScanSessionId(realId);
+        }
+
+        // Fetch suggested questions in background
         setIsLoadingQuestions(true);
         try {
-          // Pass the detected subject and summary to the engine
           const fetchedQuestions = await getQuestionsForSubject(
             result.metadata.subject,
             result.summaryText,
@@ -90,15 +101,38 @@ const ScannerTab = ({
     }
   };
 
+  /**
+   * ACTION: AI Deep Dive & Incremental Update
+   */
   const handleExplain = async () => {
-    if (!userQuery.trim() || !summary) return;
+    // 4. Validation: Deep Dive only works if we have a valid DB ID
+    if (!userQuery.trim() || !summary || !scanSessionId) {
+      console.warn("Deep Dive blocked: Missing data or Session ID");
+      return;
+    }
+
     const currentQuery = userQuery;
+    const currentSummary = summary;
+    const currentId = scanSessionId;
     setUserQuery("");
-    setSummary((prev) => prev + `\n\n---\n\n> ${currentQuery}\n\n`);
+
+    const updatedWithQuestion = `${currentSummary}\n\n>${currentQuery}\n\n`;
+    setSummary(updatedWithQuestion);
     setIsDeepDiving(true);
+
     try {
-      const deepDive = await explainFurther(summary, currentQuery);
-      setSummary((prev) => prev + `\n${deepDive}`);
+      const deepDiveResponse = await explainFurther(
+        currentSummary,
+        currentQuery,
+      );
+      const finalContent = `${updatedWithQuestion}${deepDiveResponse}\n`;
+
+      setSummary(finalContent);
+
+      // 5. Update the existing record in Supabase using the Session ID
+      await saveSummary(finalContent, metadata, currentId);
+    } catch (error) {
+      console.error("Deep Dive Error:", error);
     } finally {
       setIsDeepDiving(false);
     }
@@ -112,12 +146,7 @@ const ScannerTab = ({
     }
     setIsSpeaking(true);
     try {
-      await speak(
-        summary
-          .replace(/<[^>]*>?/gm, "")
-          .replace(/[#*_-]/g, "")
-          .trim(),
-      );
+      await speak(summary.replace(/[#*_-]/g, "").trim());
     } finally {
       setIsSpeaking(false);
     }
@@ -125,7 +154,6 @@ const ScannerTab = ({
 
   return (
     <Box sx={{ width: "100%", pb: 12 }}>
-      {/* Camera Portal */}
       {isCapturing && (
         <CameraPortal
           onClose={() => setIsCapturing(false)}
@@ -134,7 +162,6 @@ const ScannerTab = ({
         />
       )}
 
-      {/* Main View */}
       <Box sx={{ position: "relative", minHeight: "70vh" }}>
         {isAnalyzing ? (
           <Stack
@@ -147,28 +174,19 @@ const ScannerTab = ({
                 width: 80,
                 height: 80,
                 borderRadius: "50%",
-                background:
-                  "linear-gradient(135deg, #4285F4, #9B51E0, #EA4335)",
+                background: "linear-gradient(135deg, #000, #4285F4, #000)",
                 backgroundSize: "200% 200%",
                 animation: `${shimmer} 2s infinite linear`,
                 mb: 4,
-                boxShadow: "0 20px 40px rgba(99,102,241,0.2)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
               }}
             >
               <AutoAwesome sx={{ color: "white", fontSize: 40 }} />
             </Box>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 800,
-                background: "linear-gradient(90deg, #1E293B, #6366F1)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
+            <Typography variant="h6" sx={{ fontWeight: 900 }}>
               PrepFlow is reading...
             </Typography>
             <Typography variant="body2" sx={{ color: "#64748B", mt: 1 }}>
@@ -183,7 +201,6 @@ const ScannerTab = ({
             scanSessionId={scanSessionId}
             cards={cards}
             setCards={setCards}
-            // NEW PROPS FOR THE QUIZ
             questions={questions}
             isLoadingQuestions={isLoadingQuestions}
           />
@@ -192,7 +209,6 @@ const ScannerTab = ({
         )}
       </Box>
 
-      {/* Control Bar */}
       <ControlBar
         summary={summary}
         setPages={setPages}
@@ -203,10 +219,12 @@ const ScannerTab = ({
         userQuery={userQuery}
         setUserQuery={setUserQuery}
         isAnalyzing={isAnalyzing}
+        isDeepDiving={isDeepDiving}
         handleExplain={handleExplain}
         onFinishAndSummarize={onFinishAndSummarize}
         pages={pages}
         onOpenCamera={() => setIsCapturing(true)}
+        scanSessionId={scanSessionId}
       />
     </Box>
   );
