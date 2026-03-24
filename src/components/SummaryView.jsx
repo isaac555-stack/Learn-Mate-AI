@@ -156,7 +156,7 @@ const SummaryView = ({
               >
                 <Psychology
                   className="pulse-animation"
-                  sx={{ color: "#6366F1", fontSize: 32 }}
+                  sx={{ color: "#c21dbc", fontSize: 32 }}
                 />
                 <Box>
                   <Typography

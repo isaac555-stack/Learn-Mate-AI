@@ -126,15 +126,14 @@ const ScannerTab = ({
         currentQuery,
       );
       const finalContent = `${updatedWithQuestion}${deepDiveResponse}\n`;
-
+      setIsDeepDiving(false);
       setSummary(finalContent);
 
       // 5. Update the existing record in Supabase using the Session ID
       await saveSummary(finalContent, metadata, currentId);
     } catch (error) {
-      console.error("Deep Dive Error:", error);
-    } finally {
       setIsDeepDiving(false);
+      console.error("Deep Dive Error:", error);
     }
   };
 

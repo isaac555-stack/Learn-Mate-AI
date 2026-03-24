@@ -1,12 +1,11 @@
+import { useEffect, useRef } from "react";
 import {
   Box,
-  Button,
-  Container,
-  Chip,
   Stack,
   IconButton,
   TextField,
   Tooltip,
+  alpha,
 } from "@mui/material";
 import {
   Save,
@@ -14,9 +13,8 @@ import {
   Stop,
   Send,
   PhotoCamera,
-  AddCircleOutline,
+  Add,
 } from "@mui/icons-material";
-import { alpha } from "@mui/system";
 import PagesPreview from "./PagesPreview";
 
 const ControlBar = ({
@@ -34,66 +32,60 @@ const ControlBar = ({
   setPages,
   isAnalyzing,
   isDeepDiving,
-  scanSessionId, // CRITICAL: Received from ScannerTab
+  scanSessionId,
 }) => {
-  // Refactored to pass the scanSessionId (the Supabase UUID)
-  const handleManualSave = () => {
-    if (saveSummary && summary) {
-      // The third argument ensures Supabase performs an UPDATE (Upsert)
-      saveSummary(summary, metadata, scanSessionId);
-    }
-  };
-
+  const inputRef = useRef(null);
   const isProcessing = isAnalyzing || isDeepDiving;
+
+  useEffect(() => {
+    if (summary && !isProcessing && inputRef.current) {
+      const timer = setTimeout(() => inputRef.current.focus(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [summary, isProcessing]);
 
   return (
     <Box
       sx={{
         position: "fixed",
-        bottom: 0,
-        right: 0,
-        bgcolor: "#FFFFFF",
-        backdropFilter: "blur(20px)",
+        bottom: { xs: 8, md: 24 },
         left: "50%",
         transform: "translateX(-50%)",
-        width: { xs: "85%", md: "auto" },
-        minWidth: { md: "700px" },
-        py: 1.2,
-        mb: { xs: 2, md: 3 },
-
+        width: { xs: "95%", md: "100%" },
+        maxWidth: "800px",
         px: 2,
         zIndex: 1000,
-        border: "1px solid rgba(0, 0, 0, 0.1)",
-        borderRadius: "35px",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
       }}
     >
-      <Container maxWidth="md" disableGutters>
+      <Box
+        sx={{
+          bgcolor: "#fff",
+          boxShadow: "0 1px 6px rgba(32,33,36,.28)",
+          borderRadius: "28px",
+          p: "12px 16px",
+          transition: "all 0.2s ease-in-out",
+          border: "1px solid transparent",
+          "&:focus-within": {
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          },
+        }}
+      >
+        {/* Attachment Preview Area */}
         <PagesPreview pages={pages} setPages={setPages} />
 
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Box
-            sx={{
-              flexGrow: 1,
-              display: "flex",
-              alignItems: "center",
-              borderRadius: "32px",
-              px: 2,
-              py: 0.5,
-              transition: "0.3s",
-            }}
-          >
+        <Stack spacing={1}>
+          <Stack direction="row" alignItems="flex-end" spacing={1}>
+            {/* Middle: The Input */}
             <TextField
               fullWidth
+              inputRef={inputRef}
+              disabled={!summary || isProcessing}
               multiline
-              maxRows={4}
+              maxRows={10}
               variant="standard"
               placeholder={
-                summary
-                  ? "Ask a follow-up question..."
-                  : "Snap your notes to start"
+                summary ? "Ask PrepFlow..." : "Snap notes to start..."
               }
-              disabled={!summary || isProcessing}
               value={userQuery}
               onChange={(e) => setUserQuery(e.target.value)}
               onKeyPress={(e) => {
@@ -102,115 +94,112 @@ const ControlBar = ({
                   handleExplain();
                 }
               }}
-              InputProps={{ disableUnderline: true }}
-              sx={{ py: 1, fontSize: "0.95rem" }}
+              InputProps={{
+                disableUnderline: true,
+                sx: {
+                  fontSize: "1rem",
+                  px: 1,
+                  py: 1,
+                  color: "#1f1f1f",
+                  fontFamily: "'Google Sans', Roboto, sans-serif",
+                },
+              }}
             />
 
-            {summary ? (
-              <IconButton
-                onClick={handleExplain}
-                disabled={!userQuery.trim() || isProcessing}
-                sx={{
-                  transition: "0.2s",
-                  "&:hover": { transform: "scale(1.1)" },
-                }}
-              >
-                <Send
-                  sx={{ color: userQuery.trim() ? "#6366F1" : "#cbd5e1" }}
-                />
-              </IconButton>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={onFinishAndSummarize}
-                disabled={pages.length < 1 || isAnalyzing}
-                sx={{
-                  borderRadius: "20px",
-                  textTransform: "none",
-                  fontWeight: 900,
-                  px: 4,
-                  bgcolor: "#000",
-                  "&:hover": { bgcolor: "#333" },
-                }}
-              >
-                {isAnalyzing ? "Reading..." : "Summarize"}
-              </Button>
-            )}
-          </Box>
+            {/* Right: The Dynamic Action Button */}
+            <Box sx={{ mb: 0.5 }}>
+              {!summary && pages.length > 0 ? (
+                // Summarize Mode
+                <IconButton
+                  onClick={onFinishAndSummarize}
+                  disabled={isAnalyzing}
+                  sx={{
+                    bgcolor: "#1a73e8",
+                    color: "#fff",
+                    width: 40,
+                    height: 40,
+                    "&:hover": { bgcolor: "#1557b0" },
+                    "&.Mui-disabled": { bgcolor: "#c4c7c5" },
+                  }}
+                >
+                  <Send fontSize="small" />
+                </IconButton>
+              ) : (
+                // Chat Mode
+                <IconButton
+                  onClick={handleExplain}
+                  disabled={!userQuery.trim() || isProcessing}
+                  sx={{
+                    color: userQuery.trim() ? "#1a73e8" : "#c4c7c5",
+                    p: 1.2,
+                  }}
+                >
+                  <Send fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
+          </Stack>
 
-          {!summary && (
-            <IconButton
-              onClick={onOpenCamera}
-              disabled={isAnalyzing}
+          {/* Bottom Toolbar: Utilities */}
+          {summary && (
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between" // Pushes groups to opposite ends
               sx={{
-                bgcolor: "#000",
-                color: "#fff",
-                "&:hover": { bgcolor: "#333" },
+                pt: 1,
+                mt: 0.5,
+                borderTop: "1px solid",
+                borderColor: alpha("#000", 0.04), // Very subtle divider
               }}
             >
-              <PhotoCamera />
-            </IconButton>
+              {/* Left Side: Output/Management Tools */}
+              <Stack direction="row" spacing={1}>
+                <Tooltip title={isSpeaking ? "Stop" : "Listen"}>
+                  <IconButton
+                    onClick={handleSpeech}
+                    size="small"
+                    sx={{
+                      color: isSpeaking ? "#1a73e8" : "#444746",
+                      bgcolor: isSpeaking
+                        ? alpha("#1a73e8", 0.1)
+                        : "transparent",
+                      p: 1,
+                      "&:hover": {
+                        bgcolor: isSpeaking
+                          ? alpha("#1a73e8", 0.15)
+                          : alpha("#444746", 0.08),
+                      },
+                    }}
+                  >
+                    {isSpeaking ? (
+                      <Stop sx={{ fontSize: 20 }} />
+                    ) : (
+                      <VolumeUp sx={{ fontSize: 20 }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+              {/* Right Side: Creation/Input Tools */}
+              <Stack direction="row" spacing={0.5}>
+                <Tooltip title="Add more pages">
+                  <IconButton
+                    onClick={onOpenCamera}
+                    size="small"
+                    sx={{
+                      color: "#444746",
+                      p: 1,
+                      "&:hover": { bgcolor: alpha("#444746", 0.08) },
+                    }}
+                  >
+                    <PhotoCamera sx={{ fontSize: 20 }} />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </Stack>
           )}
         </Stack>
-
-        {summary && (
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid #f1f5f9" }}
-          >
-            <Stack direction="row" spacing={1}>
-              <Chip
-                icon={<Save sx={{ fontSize: "18px !important" }} />}
-                label={isProcessing ? "Syncing..." : "Save Sync"}
-                onClick={handleManualSave}
-                disabled={isProcessing}
-                sx={{
-                  borderRadius: "12px",
-                  bgcolor: "white",
-                  border: "1px solid #e2e8f0",
-                  fontWeight: 700,
-                  "&:hover": { bgcolor: "#f8fafc" },
-                }}
-              />
-
-              <Chip
-                icon={isSpeaking ? <Stop /> : <VolumeUp />}
-                label={isSpeaking ? "Stop" : "Listen"}
-                onClick={handleSpeech}
-                disabled={isProcessing}
-                sx={{
-                  borderRadius: "12px",
-                  fontWeight: 700,
-                  bgcolor: isSpeaking
-                    ? alpha("#ef4444", 0.1)
-                    : alpha("#6366F1", 0.1),
-                  color: isSpeaking ? "#ef4444" : "#6366F1",
-                  border: "1px solid",
-                  borderColor: isSpeaking
-                    ? alpha("#ef4444", 0.2)
-                    : alpha("#6366F1", 0.2),
-                }}
-              />
-            </Stack>
-
-            <Tooltip title="Start New Scan">
-              <IconButton
-                onClick={onOpenCamera}
-                disabled={isProcessing}
-                sx={{
-                  bgcolor: alpha("#64748b", 0.1),
-                  color: "#475569",
-                  "&:hover": { bgcolor: alpha("#64748b", 0.2) },
-                }}
-              >
-                <AddCircleOutline />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        )}
-      </Container>
+      </Box>
     </Box>
   );
 };
