@@ -65,6 +65,7 @@ function App() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            mb: 2,
           }}
         >
           <CircularProgress
@@ -74,6 +75,18 @@ function App() {
           />
           <RocketLaunch sx={{ color: "#FFF", fontSize: 32, opacity: 0.8 }} />
         </Box>
+        <Typography
+          variant="h4"
+          sx={{
+            color: alpha("#FFF", 0.6),
+            fontWeight: 800,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            fontSize: "1.2rem",
+          }}
+        >
+          PrepFlow
+        </Typography>
         <Typography
           variant="h6"
           sx={{

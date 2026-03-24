@@ -36,7 +36,7 @@ import {
   RocketLaunch,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
-import LandingIcon from "../assets/image.png"; // Your generated image
+import LandingIcon from "../assets/image.webp"; // Your generated image
 import { supabase } from "../services/questionsEngine";
 import Footer from "../components/Footer";
 

@@ -7,20 +7,11 @@ import {
   Tooltip,
   alpha,
 } from "@mui/material";
-import {
-  Save,
-  VolumeUp,
-  Stop,
-  Send,
-  PhotoCamera,
-  Add,
-} from "@mui/icons-material";
+import { Save, VolumeUp, Stop, Send, PhotoCamera } from "@mui/icons-material";
 import PagesPreview from "./PagesPreview";
 
 const ControlBar = ({
   summary,
-  saveSummary,
-  metadata,
   isSpeaking,
   handleSpeech,
   userQuery,
@@ -32,7 +23,6 @@ const ControlBar = ({
   setPages,
   isAnalyzing,
   isDeepDiving,
-  scanSessionId,
 }) => {
   const inputRef = useRef(null);
   const isProcessing = isAnalyzing || isDeepDiving;
@@ -94,14 +84,16 @@ const ControlBar = ({
                   handleExplain();
                 }
               }}
-              InputProps={{
-                disableUnderline: true,
-                sx: {
-                  fontSize: "1rem",
-                  px: 1,
-                  py: 1,
-                  color: "#1f1f1f",
-                  fontFamily: "'Google Sans', Roboto, sans-serif",
+              slotProps={{
+                input: {
+                  disableUnderline: true,
+                  sx: {
+                    fontSize: "1rem",
+                    px: 1,
+                    py: 1,
+                    color: "#1f1f1f",
+                    fontFamily: "'Google Sans', Roboto, sans-serif",
+                  },
                 },
               }}
             />

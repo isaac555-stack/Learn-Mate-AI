@@ -175,9 +175,6 @@ const SummaryView = ({
               </Box>
             </Fade>
           )}
-
-          {/* Scroll Anchor */}
-          <div ref={scrollRef} style={{ height: "40px" }} />
         </Paper>
       </Box>
     </Fade>
