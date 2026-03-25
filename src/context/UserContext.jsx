@@ -1,12 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-} from "react";
-import { supabase } from "../services/questionsEngine";
-
+import { createContext, useContext, useState, useCallback } from "react";
 import { supabase } from "../services/questionsEngine";
 
 const UserContext = createContext();
