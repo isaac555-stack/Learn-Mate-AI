@@ -36,16 +36,9 @@ const SummaryView = ({
     }
   }, [summary, isDeepDiving, userIsScrolling]);
 
-  const handleWheel = () => {
-    setUserIsScrolling(true);
-    // Resume auto-scroll after 5 seconds of inactivity
-    const timer = setTimeout(() => setUserIsScrolling(false), 5000);
-    return () => clearTimeout(timer);
-  };
-
   return (
     <Fade in timeout={800}>
-      <Box onWheel={handleWheel} sx={{ position: "relative" }}>
+      <Box sx={{ position: "relative" }}>
         {/* 1. TOP METADATA & STATUS BAR */}
         {metadata && (
           <Stack

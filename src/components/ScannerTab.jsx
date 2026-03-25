@@ -9,6 +9,7 @@ import { speak, stopSpeech } from "../services/speechService";
 import { explainFurther, processNotes } from "../services/aiService";
 import { getQuestionsForSubject } from "../services/questionsEngine";
 import { pulse, shimmer } from "../services/animation";
+import { useUser } from "../context/UserContext.jsx";
 
 const ScannerTab = ({
   summary,
@@ -24,6 +25,7 @@ const ScannerTab = ({
   scanSessionId,
   setScanSessionId,
 }) => {
+  const { profile } = useUser();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDeepDiving, setIsDeepDiving] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -62,7 +64,7 @@ const ScannerTab = ({
     setIsAnalyzing(true);
 
     try {
-      const result = await processNotes(pages);
+      const result = await processNotes(pages, profile);
 
       if (result) {
         setSummary(result.summaryText);
@@ -124,6 +126,7 @@ const ScannerTab = ({
       const deepDiveResponse = await explainFurther(
         currentSummary,
         currentQuery,
+        profile,
       );
       const finalContent = `${updatedWithQuestion}${deepDiveResponse}\n`;
       setIsDeepDiving(false);

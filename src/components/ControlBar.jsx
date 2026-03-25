@@ -50,7 +50,7 @@ const ControlBar = ({
       <Box
         sx={{
           bgcolor: "#fff",
-          boxShadow: "0 1px 6px rgba(32,33,36,.28)",
+          boxShadow: "0 1px 2px rgba(32,33,36,.28)",
           borderRadius: "28px",
           p: "12px 16px",
           transition: "all 0.2s ease-in-out",
