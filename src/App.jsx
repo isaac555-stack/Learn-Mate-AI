@@ -192,7 +192,11 @@ function AppContent() {
             path="/app"
             element={
               session && profile ? (
-                <Scanner />
+                <div>
+                  {" "}
+                  <ReloadPrompt />
+                  <Scanner />
+                </div>
               ) : (
                 <Navigate to={session ? "/onboarding" : "/"} replace />
               )
@@ -213,7 +217,7 @@ function App() {
       <UserProvider>
         <ToastProvider>
           <Analytics />
-          <ReloadPrompt />
+
           <AppContent />
         </ToastProvider>
       </UserProvider>
