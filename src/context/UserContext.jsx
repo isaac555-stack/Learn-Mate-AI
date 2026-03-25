@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
+import { supabase } from "../services/questionsEngine";
+
 import { supabase } from "../services/questionsEngine";
 
 const UserContext = createContext();
@@ -7,7 +15,8 @@ export const UserProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshProfile = async (userId) => {
+  // Wrap this in useCallback!
+  const refreshProfile = useCallback(async (userId) => {
     if (!userId) return;
     try {
       const { data, error } = await supabase
@@ -16,14 +25,14 @@ export const UserProvider = ({ children }) => {
         .eq("id", userId)
         .single();
 
-      if (error && error.code !== "PGRST116") throw error; // PGRST116 is "no rows found"
+      if (error && error.code !== "PGRST116") throw error;
       setProfile(data || null);
     } catch (err) {
       console.error("Context Error:", err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Dependencies are empty because it only uses internal state setters
 
   return (
     <UserContext.Provider
