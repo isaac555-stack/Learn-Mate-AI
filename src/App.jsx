@@ -7,7 +7,13 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
-import { Box, CircularProgress, Typography, alpha } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  alpha,
+  keyframes,
+} from "@mui/material";
 import { RocketLaunch } from "@mui/icons-material";
 
 // Services & Context
@@ -23,10 +29,13 @@ import Legal from "./pages/Legal";
 import ContactSection from "./pages/ContactPage.jsx";
 import OnboardingFlow from "./components/UserInfo.jsx";
 
-/**
- * 1. LOADING OVERLAY
- * Extracted to keep the main logic clean.
- */
+// Create a subtle floating animation
+const float = keyframes`
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+`;
+
 const LoadingScreen = ({ message = "PrepFlow is preparing your flow..." }) => (
   <Box
     sx={{
@@ -36,7 +45,8 @@ const LoadingScreen = ({ message = "PrepFlow is preparing your flow..." }) => (
       flexDirection: "column",
       alignItems: "center",
       justifyContent: "center",
-      gap: 3,
+      gap: 4, // Increased gap slightly for breathing room
+      px: 2,
     }}
   >
     <Box
@@ -45,24 +55,49 @@ const LoadingScreen = ({ message = "PrepFlow is preparing your flow..." }) => (
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        mb: 2,
       }}
     >
-      <CircularProgress
-        size={80}
-        thickness={2}
-        sx={{ color: "#6366F1", position: "absolute" }}
+      {/* Outer Glow Effect */}
+      <Box
+        sx={{
+          position: "absolute",
+          width: 100,
+          height: 100,
+          borderRadius: "50%",
+          bgcolor: alpha("#6366F1", 0.15),
+          filter: "blur(20px)",
+        }}
       />
-      <RocketLaunch sx={{ color: "#FFF", fontSize: 32, opacity: 0.8 }} />
+
+      <CircularProgress
+        size={90}
+        thickness={1.5} // Thinner lines often look more "premium"
+        sx={{
+          color: "#6366F1",
+          position: "absolute",
+          filter: "drop-shadow(0 0 8px rgba(99, 102, 241, 0.4))",
+        }}
+      />
+
+      <RocketLaunch
+        sx={{
+          color: "#FFF",
+          fontSize: 36,
+          opacity: 0.9,
+          animation: `${float} 2s ease-in-out infinite`, // Applying the animation
+        }}
+      />
     </Box>
+
     <Typography
-      variant="h4"
+      variant="h6"
       sx={{
-        color: alpha("#FFF", 0.6),
-        fontWeight: 800,
-        letterSpacing: 2,
-        textTransform: "uppercase",
-        fontSize: "1.2rem",
+        color: alpha("#FFF", 0.7),
+        fontWeight: 600,
+        letterSpacing: "0.1em",
+        textAlign: "center",
+        textTransform: "uppercase", // Gives it a "system loading" feel
+        fontSize: "0.875rem",
       }}
     >
       {message}
