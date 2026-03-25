@@ -27,7 +27,7 @@ import OnboardingFlow from "./components/UserInfo.jsx";
  * 1. LOADING OVERLAY
  * Extracted to keep the main logic clean.
  */
-const LoadingScreen = ({ message = "PrepFlow is igniting..." }) => (
+const LoadingScreen = ({ message = "PrepFlow is preparing your flow..." }) => (
   <Box
     sx={{
       bgcolor: "#050614",
