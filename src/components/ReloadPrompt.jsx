@@ -59,7 +59,6 @@ function ReloadPrompt() {
       >
         <Alert
           severity="info"
-          icon={<Update fontSize="inherit" />}
           sx={{
             ...alertStyles,
             bgcolor: alpha(theme.palette.info.dark, 0.9),
@@ -73,6 +72,7 @@ function ReloadPrompt() {
                 onClick={() => updateServiceWorker(true)}
                 sx={{
                   fontWeight: 900,
+                  borderRadius: "10px",
                   bgcolor: alpha("#fff", 0.15),
                   px: 2,
                   "&:hover": { bgcolor: alpha("#fff", 0.25) },
@@ -86,7 +86,7 @@ function ReloadPrompt() {
             </Box>
           }
         >
-          A new version of PrepFlow is ready! Major Update
+          A new version of PrepFlow is ready!
         </Alert>
       </Snackbar>
 
