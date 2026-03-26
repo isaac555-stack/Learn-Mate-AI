@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 import {
   ArrowForward,
-  CheckCircle,
   School,
   Brush,
   MenuBook,
@@ -22,236 +21,237 @@ import {
   Bolt,
   ArrowBackIosNew,
   RocketLaunch,
+  BusinessCenter,
+  ColorLens,
 } from "@mui/icons-material";
 
-// 🔹 Constants matching Landing Page
+// 🔹 Theme Constants
 const INDIGO = "#090b29";
 const ACCENT = "#6366F1";
 
+// 🔹 Shared Styles
 const inputStyle = {
   "& .MuiOutlinedInput-root": {
     borderRadius: "12px",
     bgcolor: alpha("#FFF", 0.05),
     color: "#FFF",
-    transition: "0.3s",
     "& fieldset": { borderColor: alpha("#FFF", 0.1) },
     "&:hover fieldset": { borderColor: alpha(ACCENT, 0.5) },
     "&.Mui-focused fieldset": { borderColor: ACCENT },
   },
-  "& .MuiInputBase-input::placeholder": {
-    color: alpha("#FFF", 0.4),
-    opacity: 1,
-  },
+  "& .MuiInputBase-input::placeholder": { color: alpha("#FFF", 0.4) },
 };
 
-const selectableCard = (selected) => ({
-  p: 2.5,
-  borderRadius: "16px",
-  border: "1px solid",
-  borderColor: selected ? ACCENT : alpha("#FFF", 0.1),
-  bgcolor: selected ? alpha(ACCENT, 0.1) : alpha("#FFF", 0.02),
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  gap: 2,
-  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-  "&:hover": {
-    borderColor: ACCENT,
-    bgcolor: alpha(ACCENT, 0.05),
-    transform: "translateY(-2px)",
-  },
-});
-
-// 🔹 Sub-Components
-const NameStep = ({ value, onChange }) => (
-  <TextField
-    fullWidth
-    placeholder="What should we call you?"
-    value={value}
-    onChange={(e) => onChange("name", e.target.value)}
-    autoFocus
-    sx={inputStyle}
-  />
-);
-
-const AgeStep = ({ value, onChange }) => (
-  <TextField
-    fullWidth
-    type="number"
-    placeholder="Your age"
-    value={value}
-    onChange={(e) => onChange("age", e.target.value)}
-    sx={inputStyle}
-  />
-);
-
-const StreamStep = ({ value, onChange }) => (
-  <ToggleButtonGroup
-    value={value}
-    exclusive
-    onChange={(_, val) => val && onChange("stream", val)}
-    fullWidth
+// 🔹 Reusable Option Card for Goals
+const GoalCard = ({ selected, onClick, icon, label }) => (
+  <Box
+    onClick={onClick}
     sx={{
+      p: 2.5,
+      borderRadius: "16px",
+      border: "1px solid",
+      borderColor: selected ? ACCENT : alpha("#FFF", 0.1),
+      bgcolor: selected ? alpha(ACCENT, 0.1) : alpha("#FFF", 0.02),
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
       gap: 2,
-      "& .MuiToggleButtonGroup-grouped": {
-        border: "none",
-        borderRadius: "16px !important",
+      transition: "0.2s",
+      "&:hover": {
+        bgcolor: alpha(ACCENT, 0.05),
+        transform: "translateY(-2px)",
       },
     }}
   >
-    {[
-      { id: "science", label: "Science", icon: <School fontSize="large" /> },
-      { id: "art", label: "Arts", icon: <Brush fontSize="large" /> },
-    ].map((item) => (
-      <ToggleButton
-        key={item.id}
-        value={item.id}
-        sx={{
-          py: 4,
-          flexDirection: "column",
-          textTransform: "none",
-          bgcolor: value === item.id ? alpha(ACCENT, 0.2) : alpha("#FFF", 0.03),
-          color: value === item.id ? "#FFF" : alpha("#FFF", 0.5),
-          border: "1px solid",
-          borderColor: value === item.id ? ACCENT : "transparent",
-          "&:hover": { bgcolor: alpha(ACCENT, 0.1) },
-          "&.Mui-selected": { color: "#FFF", bgcolor: alpha(ACCENT, 0.2) },
-          "&.Mui-selected:hover": { bgcolor: alpha(ACCENT, 0.3) },
-        }}
-      >
-        {item.icon}
-        <Typography fontWeight={700} sx={{ mt: 1 }}>
-          {item.label}
-        </Typography>
-      </ToggleButton>
-    ))}
-  </ToggleButtonGroup>
+    {icon}
+    <Typography fontWeight={500} color="#FFF">
+      {label}
+    </Typography>
+  </Box>
 );
 
-const GoalStep = ({ value, onChange }) => {
-  const goals = [
-    {
-      id: "exam",
-      label: "Ace an exam (JAMB/WAEC)",
-      icon: <MenuBook sx={{ color: ACCENT }} />,
-    },
-    {
-      id: "mastery",
-      label: "Deep Mastery",
-      icon: <Psychology sx={{ color: "#4ADE80" }} />,
-    },
-    {
-      id: "quick",
-      label: "Quick Homework Help",
-      icon: <Bolt sx={{ color: "#FB923C" }} />,
-    },
-  ];
-
-  return (
-    <Stack spacing={2}>
-      {goals.map((g) => (
-        <Box
-          key={g.id}
-          onClick={() => onChange("goal", g.id)}
-          sx={selectableCard(value === g.id)}
-        >
-          {g.icon}
-          <Typography fontWeight={500} color="#FFF">
-            {g.label}
-          </Typography>
-        </Box>
-      ))}
-    </Stack>
-  );
-};
-
-const LearningStep = ({ value, onChange }) => {
-  const styles = ["Summaries", "Deep Dive", "Step-by-Step", "Examples"];
-  return (
-    <Stack direction="row" flexWrap="wrap" gap={1.5}>
-      {styles.map((style) => {
-        const id = style.toLowerCase().replace(/ /g, "_");
-        const selected = value === id;
-        return (
-          <Box
-            key={id}
-            onClick={() => onChange("learning_style", id)}
-            sx={{
-              px: 3,
-              py: 1.5,
-              borderRadius: "12px",
-              border: "1px solid",
-              borderColor: selected ? ACCENT : alpha("#FFF", 0.1),
-              bgcolor: selected ? ACCENT : alpha("#FFF", 0.05),
-              color: "#fff",
-              cursor: "pointer",
-              transition: "0.2s",
-              fontWeight: 600,
-              opacity: selected ? 1 : 0.7,
-              "&:hover": { borderColor: ACCENT, opacity: 1 },
-            }}
-          >
-            {style}
-          </Box>
-        );
-      })}
-    </Stack>
-  );
-};
-
-// 🔹 Main Component
 const OnboardingFlow = ({ onComplete }) => {
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState({
     name: "",
     age: "",
-    stream: "science",
+    stream: "",
     goal: "exam",
     learning_style: "summaries",
   });
 
   const updateProfile = (key, value) =>
-    setProfile((prev) => ({ ...prev, [key]: value }));
+    setProfile((p) => ({ ...p, [key]: value }));
 
-  const steps = [
-    {
-      label: "What's your name?",
-      sub: "Let's personalize your PrepFlow.",
-      component: <NameStep value={profile.name} onChange={updateProfile} />,
-    },
-    {
-      label: "How old are you?",
-      sub: "We'll adjust question difficulty.",
-      component: <AgeStep value={profile.age} onChange={updateProfile} />,
-    },
-    {
-      label: "Your Focus Area",
-      sub: "Science or Arts?",
-      component: <StreamStep value={profile.stream} onChange={updateProfile} />,
-    },
-    {
-      label: "What's the goal?",
-      sub: "Tailoring your practice logic.",
-      component: <GoalStep value={profile.goal} onChange={updateProfile} />,
-    },
-    {
-      label: "Learning Style",
-      sub: "How do you prefer to review?",
-      component: (
-        <LearningStep value={profile.learning_style} onChange={updateProfile} />
-      ),
-    },
-  ];
-
-  const canContinue = () => {
-    if (step === 0) return profile.name.length > 1;
-    if (step === 1) return profile.age > 5 && profile.age < 100;
-    return true;
-  };
+  // 🔹 Step Configuration
+  const steps = useMemo(
+    () => [
+      {
+        id: "name",
+        label: "What's your name?",
+        sub: "Let's personalize your PrepFlow.",
+        component: (
+          <TextField
+            fullWidth
+            placeholder="Enter your name"
+            value={profile.name}
+            onChange={(e) => updateProfile("name", e.target.value)}
+            autoFocus
+            sx={inputStyle}
+          />
+        ),
+        isValid: profile.name.trim().length > 1,
+      },
+      {
+        id: "age",
+        label: "How old are you?",
+        sub: "We'll adjust question difficulty based on your level.",
+        component: (
+          <TextField
+            fullWidth
+            type="number"
+            placeholder="e.g. 17"
+            value={profile.age}
+            onChange={(e) => updateProfile("age", e.target.value)}
+            sx={inputStyle}
+          />
+        ),
+        isValid: profile.age > 5 && profile.age < 100,
+      },
+      {
+        id: "stream",
+        label: "Your Focus Area",
+        sub: "Choose your academic department.",
+        component: (
+          <ToggleButtonGroup
+            value={profile.stream}
+            exclusive
+            onChange={(_, val) => val && updateProfile("stream", val)}
+            fullWidth
+            sx={{
+              gap: 2,
+              "& .MuiToggleButton-root": {
+                border: `1px solid ${alpha("#FFF", 0.1)}`,
+                borderRadius: "16px !important",
+              },
+            }}
+          >
+            {[
+              { id: "Science", icon: <School />, label: "Science" },
+              { id: "Art", icon: <ColorLens />, label: "Arts" },
+              { id: "Commerce", icon: <BusinessCenter />, label: "Commerce" },
+            ].map((item) => (
+              <ToggleButton
+                key={item.id}
+                value={item.id}
+                sx={{
+                  flexDirection: "column",
+                  py: 3,
+                  textTransform: "none",
+                  color: alpha("#FFF", 0.5),
+                  "&.Mui-selected": {
+                    color: "#FFF",
+                    bgcolor: alpha(ACCENT, 0.2),
+                    borderColor: ACCENT,
+                  },
+                }}
+              >
+                {item.icon}
+                <Typography fontWeight={700} mt={1}>
+                  {item.label}
+                </Typography>
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        ),
+        isValid: !!profile.stream,
+      },
+      {
+        id: "goal",
+        label: "What's the goal?",
+        sub: "Tailoring your practice logic to your needs.",
+        component: (
+          <Stack spacing={2}>
+            {[
+              {
+                id: "exam",
+                label: "Ace an exam (JAMB/WAEC)",
+                icon: <MenuBook sx={{ color: ACCENT }} />,
+              },
+              {
+                id: "mastery",
+                label: "Deep Mastery",
+                icon: <Psychology sx={{ color: "#4ADE80" }} />,
+              },
+              {
+                id: "quick",
+                label: "Quick Homework Help",
+                icon: <Bolt sx={{ color: "#FB923C" }} />,
+              },
+            ].map((g) => (
+              <GoalCard
+                key={g.id}
+                label={g.label}
+                icon={g.icon}
+                selected={profile.goal === g.id}
+                onClick={() => updateProfile("goal", g.id)}
+              />
+            ))}
+          </Stack>
+        ),
+        isValid: true,
+      },
+      {
+        id: "style",
+        label: "Learning Style",
+        sub: "How do you prefer to review content?",
+        component: (
+          <Stack direction="row" flexWrap="wrap" gap={1.5}>
+            {["Summaries", "Deep Dive", "Step-by-Step", "Examples"].map(
+              (style) => {
+                const id = style.toLowerCase().replace(/ /g, "_");
+                const isSelected = profile.learning_style === id;
+                return (
+                  <Box
+                    key={id}
+                    onClick={() => updateProfile("learning_style", id)}
+                    sx={{
+                      px: 3,
+                      py: 1.5,
+                      borderRadius: "12px",
+                      border: "1px solid",
+                      borderColor: isSelected ? ACCENT : alpha("#FFF", 0.1),
+                      bgcolor: isSelected ? ACCENT : alpha("#FFF", 0.05),
+                      color: "#fff",
+                      cursor: "pointer",
+                      transition: "0.2s",
+                      fontWeight: 600,
+                      opacity: isSelected ? 1 : 0.7,
+                      "&:hover": { opacity: 1, borderColor: ACCENT },
+                    }}
+                  >
+                    {style}
+                  </Box>
+                );
+              },
+            )}
+          </Stack>
+        ),
+        isValid: true,
+      },
+    ],
+    [profile],
+  );
 
   const handleNext = () => {
-    step === steps.length - 1 ? onComplete(profile) : setStep(step + 1);
+    if (step === steps.length - 1) {
+      onComplete(profile);
+    } else {
+      setStep((s) => s + 1);
+    }
   };
+
+  const currentStep = steps[step];
 
   return (
     <Box
@@ -270,35 +270,30 @@ const OnboardingFlow = ({ onComplete }) => {
           maxWidth: 480,
           width: "100%",
           p: 4,
-          borderRadius: 6,
+          borderRadius: 3,
           bgcolor: alpha("#FFF", 0.02),
-          border: "1px solid",
-          borderColor: alpha("#FFF", 0.08),
-          backdropFilter: "blur(10px)",
+          border: `1px solid ${alpha("#FFF", 0.08)}`,
+          backdropFilter: "blur(12px)",
         }}
       >
-        {/* PrepFlow Branding */}
+        {/* Header & Progress */}
         <Stack
           direction="row"
           justifyContent="space-between"
           alignItems="center"
-          mb={4}
+          mb={1}
         >
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 900, color: ACCENT, letterSpacing: -0.5 }}
-          >
+          <Typography variant="h6" sx={{ fontWeight: 900, color: ACCENT }}>
             PrepFlow
           </Typography>
           <Typography
             variant="caption"
             sx={{ color: alpha("#FFF", 0.3), fontWeight: 700 }}
           >
-            STEP {step + 1} OF {steps.length}
+            {step + 1} / {steps.length}
           </Typography>
         </Stack>
 
-        {/* Progress Bar */}
         <Box sx={{ display: "flex", gap: 1, mb: 4 }}>
           {steps.map((_, i) => (
             <Box
@@ -321,8 +316,7 @@ const OnboardingFlow = ({ onComplete }) => {
             sx={{
               mb: 2,
               color: alpha("#FFF", 0.5),
-              border: "1px solid",
-              borderColor: alpha("#FFF", 0.1),
+              border: `1px solid ${alpha("#FFF", 0.1)}`,
             }}
           >
             <ArrowBackIosNew fontSize="small" />
@@ -332,26 +326,26 @@ const OnboardingFlow = ({ onComplete }) => {
         <Fade in key={step} timeout={400}>
           <Box
             onKeyDown={(e) =>
-              e.key === "Enter" && canContinue() && handleNext()
+              e.key === "Enter" && currentStep.isValid && handleNext()
             }
           >
             <Typography variant="h4" fontWeight={900} color="#FFF" gutterBottom>
-              {steps[step].label}
+              {currentStep.label}
             </Typography>
             <Typography
               variant="body1"
               sx={{ color: alpha("#FFF", 0.6), mb: 4 }}
             >
-              {steps[step].sub}
+              {currentStep.sub}
             </Typography>
 
-            <Box sx={{ minHeight: 220 }}>{steps[step].component}</Box>
+            <Box sx={{ minHeight: 240 }}>{currentStep.component}</Box>
 
             <Button
               fullWidth
               variant="contained"
               size="large"
-              disabled={!canContinue()}
+              disabled={!currentStep.isValid}
               onClick={handleNext}
               sx={{
                 mt: 4,
@@ -364,7 +358,7 @@ const OnboardingFlow = ({ onComplete }) => {
                 "&:hover": { bgcolor: alpha(ACCENT, 0.8) },
                 "&.Mui-disabled": {
                   bgcolor: alpha(ACCENT, 0.2),
-                  color: alpha("#FFF", 0.3),
+                  color: alpha("#FFF", 0.1),
                 },
               }}
               endIcon={

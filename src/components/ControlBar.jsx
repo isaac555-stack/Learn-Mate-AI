@@ -6,6 +6,10 @@ import {
   TextField,
   Tooltip,
   alpha,
+  useTheme,
+  Typography,
+  Fade,
+  CircularProgress,
 } from "@mui/material";
 import { Save, VolumeUp, Stop, Send, PhotoCamera } from "@mui/icons-material";
 import PagesPreview from "./PagesPreview";
@@ -24,9 +28,12 @@ const ControlBar = ({
   isAnalyzing,
   isDeepDiving,
 }) => {
+  const theme = useTheme();
   const inputRef = useRef(null);
   const isProcessing = isAnalyzing || isDeepDiving;
+  const isDarkMode = theme.palette.mode === "dark";
 
+  // Auto-focus input when summary is ready
   useEffect(() => {
     if (summary && !isProcessing && inputRef.current) {
       const timer = setTimeout(() => inputRef.current.focus(), 100);
@@ -38,10 +45,10 @@ const ControlBar = ({
     <Box
       sx={{
         position: "fixed",
-        bottom: { xs: 8, md: 24 },
+        bottom: { xs: 12, md: 24 },
         left: "50%",
         transform: "translateX(-50%)",
-        width: { xs: "95%", md: "100%" },
+        width: { xs: "96%", md: "100%" },
         maxWidth: "800px",
         px: 2,
         zIndex: 1000,
@@ -49,23 +56,24 @@ const ControlBar = ({
     >
       <Box
         sx={{
-          bgcolor: "#fff",
-          boxShadow: "0 1px 2px rgba(32,33,36,.28)",
+          bgcolor: "background.paper", // Theme aware
+          backgroundImage: isDarkMode
+            ? "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))"
+            : "none",
+          boxShadow: isDarkMode
+            ? "0 4px 20px rgba(0,0,0,0.5)"
+            : "0 2px 12px rgba(0,0,0,0.08)",
           borderRadius: "28px",
-          p: "12px 16px",
-          transition: "all 0.2s ease-in-out",
-          border: "1px solid transparent",
-          "&:focus-within": {
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          },
+          p: "10px 14px",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
         }}
       >
         {/* Attachment Preview Area */}
         <PagesPreview pages={pages} setPages={setPages} />
 
-        <Stack spacing={1}>
+        <Stack spacing={0.5}>
           <Stack direction="row" alignItems="flex-end" spacing={1}>
-            {/* Middle: The Input */}
             <TextField
               fullWidth
               inputRef={inputRef}
@@ -89,41 +97,43 @@ const ControlBar = ({
                   disableUnderline: true,
                   sx: {
                     fontSize: "1rem",
-                    px: 1,
+                    px: 1.5,
                     py: 1,
-                    color: "#1f1f1f",
-                    fontFamily: "'Google Sans', Roboto, sans-serif",
+                    color: "text.primary",
+                    fontWeight: 400,
                   },
                 },
               }}
             />
 
-            {/* Right: The Dynamic Action Button */}
+            {/* Action Button */}
             <Box sx={{ mb: 0.5 }}>
               {!summary && pages.length > 0 ? (
-                // Summarize Mode
                 <IconButton
                   onClick={onFinishAndSummarize}
                   disabled={isAnalyzing}
                   sx={{
-                    bgcolor: "#1a73e8",
-                    color: "#fff",
-                    width: 40,
-                    height: 40,
-                    "&:hover": { bgcolor: "#1557b0" },
-                    "&.Mui-disabled": { bgcolor: "#c4c7c5" },
+                    bgcolor: "primary.main",
+                    color: "white",
+                    width: 44,
+                    height: 44,
+                    boxShadow: "0 4px 10px rgba(99, 102, 241, 0.3)",
+                    "&:hover": { bgcolor: "primary.dark" },
+                    "&.Mui-disabled": {
+                      bgcolor: alpha(theme.palette.text.disabled, 0.1),
+                    },
                   }}
                 >
                   <Send fontSize="small" />
                 </IconButton>
               ) : (
-                // Chat Mode
                 <IconButton
                   onClick={handleExplain}
                   disabled={!userQuery.trim() || isProcessing}
                   sx={{
-                    color: userQuery.trim() ? "#1a73e8" : "#c4c7c5",
-                    p: 1.2,
+                    color: userQuery.trim() ? "primary.main" : "text.disabled",
+                    transition: "color 0.2s",
+                    p: 1.5,
                   }}
                 >
                   <Send fontSize="small" />
@@ -132,62 +142,81 @@ const ControlBar = ({
             </Box>
           </Stack>
 
-          {/* Bottom Toolbar: Utilities */}
+          {/* Bottom Toolbar Utilities */}
           {summary && (
             <Stack
               direction="row"
               alignItems="center"
-              justifyContent="space-between" // Pushes groups to opposite ends
+              justifyContent="space-between" // 👈 Pushes Speak to left and Camera to right
               sx={{
-                pt: 1,
-                mt: 0.5,
-                borderTop: "1px solid",
-                borderColor: alpha("#000", 0.04), // Very subtle divider
+                pt: 1.5,
+                mt: 1.5,
+                borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
               }}
             >
-              {/* Left Side: Output/Management Tools */}
-              <Stack direction="row" spacing={1}>
-                <Tooltip title={isSpeaking ? "Stop" : "Listen"}>
-                  <IconButton
-                    onClick={handleSpeech}
-                    size="small"
-                    sx={{
-                      color: isSpeaking ? "#1a73e8" : "#444746",
-                      bgcolor: isSpeaking
-                        ? alpha("#1a73e8", 0.1)
-                        : "transparent",
-                      p: 1,
-                      "&:hover": {
-                        bgcolor: isSpeaking
-                          ? alpha("#1a73e8", 0.15)
-                          : alpha("#444746", 0.08),
-                      },
-                    }}
-                  >
-                    {isSpeaking ? (
-                      <Stop sx={{ fontSize: 20 }} />
-                    ) : (
-                      <VolumeUp sx={{ fontSize: 20 }} />
-                    )}
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-              {/* Right Side: Creation/Input Tools */}
-              <Stack direction="row" spacing={0.5}>
-                <Tooltip title="Add more pages">
-                  <IconButton
-                    onClick={onOpenCamera}
-                    size="small"
-                    sx={{
-                      color: "#444746",
-                      p: 1,
-                      "&:hover": { bgcolor: alpha("#444746", 0.08) },
-                    }}
-                  >
-                    <PhotoCamera sx={{ fontSize: 20 }} />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
+              {/* LEFT SIDE: Speech */}
+              <Tooltip title={isSpeaking ? "Stop" : "Listen to Summary"}>
+                <IconButton
+                  onClick={handleSpeech}
+                  size="small"
+                  sx={{
+                    color: isSpeaking ? "primary.main" : "text.secondary",
+                    bgcolor: isSpeaking
+                      ? alpha(theme.palette.primary.main, 0.1)
+                      : "transparent",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      bgcolor: alpha(theme.palette.primary.main, 0.15),
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                >
+                  {isSpeaking ? (
+                    <Stop fontSize="small" />
+                  ) : (
+                    <VolumeUp fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+
+              {/* CENTER: Processing Indicator */}
+              {isProcessing && (
+                <Fade in={isProcessing}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <CircularProgress size={12} thickness={6} />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontSize: "0.7rem",
+                        color: "primary.main",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                      }}
+                    >
+                      Thinking...
+                    </Typography>
+                  </Stack>
+                </Fade>
+              )}
+
+              {/* RIGHT SIDE: Camera */}
+              <Tooltip title="Add more pages">
+                <IconButton
+                  onClick={onOpenCamera}
+                  size="small"
+                  sx={{
+                    color: "text.secondary",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      color: "primary.main",
+                      bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    },
+                  }}
+                >
+                  <PhotoCamera fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Stack>
           )}
         </Stack>

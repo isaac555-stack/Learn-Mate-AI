@@ -8,7 +8,7 @@ import {
   CircularProgress,
   Typography,
   Avatar,
-  alpha,
+  useTheme,
 } from "@mui/material";
 import { useNotes } from "../hooks/useNotes";
 import HeaderSection from "./HeaderSection";
@@ -18,23 +18,24 @@ import QuizModal from "./QuizModal";
 import { generateQuiz } from "../services/aiService";
 
 const Scanner = () => {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === "dark";
+
+  // --- UI States ---
   const [tab, setTab] = useState(0);
+  const [isQuizLoading, setIsQuizLoading] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
+
+  // --- Data States ---
   const [summary, setSummary] = useState("");
   const [pages, setPages] = useState([]);
   const [cards, setCards] = useState([]);
   const [metadata, setMetadata] = useState(null);
-
-  // --- CRITICAL NEW STATE ---
-  // This stores the UUID from Supabase so the ScannerTab knows which note to update
   const [scanSessionId, setScanSessionId] = useState(null);
-
-  const { savedNotes, saveNote, deleteNote, refreshNotes } = useNotes();
-
-  // --- Quiz States ---
-  const [isQuizLoading, setIsQuizLoading] = useState(false);
-  const [quizOpen, setQuizOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState([]);
   const [quizTopic, setQuizTopic] = useState("");
+
+  const { savedNotes, saveNote, deleteNote, refreshNotes } = useNotes();
 
   const startQuiz = async (note, count) => {
     setIsQuizLoading(true);
@@ -53,45 +54,44 @@ const Scanner = () => {
   return (
     <Box
       sx={{
-        bgcolor: "#fbfbfb",
+        bgcolor: "background.default",
         minHeight: "100vh",
-        m: 0,
-        backgroundImage: `
-          radial-gradient(circle at 10% 20%, ${alpha("#6366F1", 0.05)} 0%, transparent 20%),
-          radial-gradient(circle at 90% 80%, ${alpha("#EC4899", 0.05)} 0%, transparent 20%)
-        `,
       }}
     >
+      {/* Loading Overlay */}
       <Backdrop
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 999,
-          backdropFilter: "blur(15px)",
-          background: "rgba(255, 255, 255, 0.8)",
-          color: "#1E293B",
+          backdropFilter: "blur(8px)",
+          bgcolor: isDarkMode ? "rgba(0,0,0,0.7)" : "rgba(255,255,255,0.7)",
+          color: "text.primary",
         }}
         open={isQuizLoading}
       >
         <Stack alignItems="center" spacing={3}>
-          <Box sx={{ position: "relative" }}>
+          <Box sx={{ position: "relative", display: "flex" }}>
             <CircularProgress
               size={100}
-              sx={{ color: "#6366F1" }}
               thickness={2}
+              sx={{ color: "primary.main" }}
             />
             <Avatar
               src="https://api.dicebear.com/9.x/adventurer/svg?flip=true&seed=Sara"
               sx={{
-                width: 45,
-                height: 45,
-                border: "2px solid white",
+                width: 50,
+                height: 50,
                 position: "absolute",
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
+                border: `3px solid ${theme.palette.background.paper}`,
               }}
             />
           </Box>
-          <Typography variant="h5" sx={{ fontWeight: 900 }}>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 800, letterSpacing: -0.5 }}
+          >
             Analyzing content...
           </Typography>
         </Stack>
@@ -99,10 +99,11 @@ const Scanner = () => {
 
       <HeaderSection tab={tab} setTab={setTab} />
 
-      <Container maxWidth="md" sx={{ pt: { xs: 14, md: 16 }, pb: { xs: 6 } }}>
-        <Box sx={{ position: "relative" }}>
+      <Container maxWidth="md" sx={{ pt: { xs: 12, md: 15 }, pb: 8 }}>
+        {/* Animated Tab Switcher */}
+        <Box sx={{ minHeight: "60vh" }}>
           {tab === 0 ? (
-            <Fade in={tab === 0}>
+            <Fade in={tab === 0} timeout={400}>
               <Box>
                 <ScannerTab
                   summary={summary}
@@ -114,21 +115,19 @@ const Scanner = () => {
                   setMetadata={setMetadata}
                   cards={cards}
                   setCards={setCards}
-                  // Pass the Session ID states here
                   scanSessionId={scanSessionId}
                   setScanSessionId={setScanSessionId}
                 />
               </Box>
             </Fade>
           ) : (
-            <Fade in={tab === 1}>
+            <Fade in={tab === 1} timeout={400}>
               <Box>
                 <LibraryTab
                   savedNotes={savedNotes}
                   refreshNotes={refreshNotes}
                   deleteNote={deleteNote}
                   handleLaunchQuiz={startQuiz}
-                  // Hydration props for LibraryTab
                   setSummary={setSummary}
                   setMetadata={setMetadata}
                   setScanSessionId={setScanSessionId}
@@ -138,19 +137,20 @@ const Scanner = () => {
             </Fade>
           )}
         </Box>
-
-        {quizOpen && (
-          <QuizModal
-            open={quizOpen}
-            questions={activeQuiz}
-            topic={quizTopic}
-            onClose={() => {
-              setQuizOpen(false);
-              setActiveQuiz([]);
-            }}
-          />
-        )}
       </Container>
+
+      {/* Quiz Modal Integration */}
+      {quizOpen && (
+        <QuizModal
+          open={quizOpen}
+          questions={activeQuiz}
+          topic={quizTopic}
+          onClose={() => {
+            setQuizOpen(false);
+            setActiveQuiz([]);
+          }}
+        />
+      )}
     </Box>
   );
 };

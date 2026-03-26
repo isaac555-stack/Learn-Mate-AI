@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Typography,
   Paper,
@@ -23,6 +23,7 @@ import {
   ListItemText,
   CircularProgress,
   Tooltip,
+  useTheme,
 } from "@mui/material";
 import {
   DeleteOutline,
@@ -40,43 +41,32 @@ import {
   MoreVert,
   MenuBook,
   Sync,
+  Psychology,
+  HistoryEdu,
+  Draw,
 } from "@mui/icons-material";
 
-const getSubjectStyle = (subject = "General") => {
+// Enhanced Subject Mapping with Gemini Palette
+const getSubjectStyle = (theme, subject = "General") => {
+  const isDark = theme.palette.mode === "dark";
   const map = {
-    Biology: {
-      color: "#10b981",
-      icon: <Science />,
-      bg: "rgba(16, 185, 129, 0.08)",
-    },
-    Physics: {
-      color: "#3b82f6",
-      icon: <Science />,
-      bg: "rgba(59, 130, 246, 0.08)",
-    },
-    Mathematics: {
-      color: "#f59e0b",
-      icon: <Calculate />,
-      bg: "rgba(245, 158, 11, 0.08)",
-    },
-    Chemistry: {
-      color: "#6366f1",
-      icon: <Science />,
-      bg: "rgba(99, 102, 241, 0.08)",
-    },
-    English: {
-      color: "#06b6d4",
-      icon: <Book />,
-      bg: "rgba(6, 182, 212, 0.08)",
-    },
+    Biology: { color: "#34A853", icon: <Science fontSize="small" /> },
+    Physics: { color: "#4285F4", icon: <Psychology fontSize="small" /> },
+    Mathematics: { color: "#FBBC04", icon: <Calculate fontSize="small" /> },
+    Chemistry: { color: "#A142F4", icon: <AutoFixHigh fontSize="small" /> },
+    English: { color: "#EA4335", icon: <HistoryEdu fontSize="small" /> },
+    Art: { color: "#F06292", icon: <Draw fontSize="small" /> },
   };
-  return (
-    map[subject] || {
-      color: "#6366F1",
-      icon: <AutoFixHigh />,
-      bg: "rgba(99, 102, 241, 0.08)",
-    }
-  );
+
+  const choice = map[subject] || {
+    color: theme.palette.primary.main,
+    icon: <AutoAwesome fontSize="small" />,
+  };
+
+  return {
+    ...choice,
+    bg: alpha(choice.color, isDark ? 0.15 : 0.1),
+  };
 };
 
 const LibraryTab = ({
@@ -84,11 +74,15 @@ const LibraryTab = ({
   setSummary,
   setTab,
   deleteNote,
-  setMetadata, // Correctly received from Parent
-  setScanSessionId, // Correctly received from Parent
+  setMetadata,
+  setScanSessionId,
   handleLaunchQuiz,
   refreshNotes,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
+  // States
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
@@ -98,20 +92,11 @@ const LibraryTab = ({
   const [questionCount, setQuestionCount] = useState(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const toTitle = (str) =>
-    !str
-      ? ""
-      : str
-          .toLowerCase()
-          .split(" ")
-          .filter(Boolean)
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-
-  const subjects = [
-    "All",
-    ...new Set(savedNotes.map((n) => n.subject).filter(Boolean)),
-  ];
+  // Memoized Subjects
+  const subjects = useMemo(
+    () => ["All", ...new Set(savedNotes.map((n) => n.subject).filter(Boolean))],
+    [savedNotes],
+  );
 
   const filteredNotes = savedNotes.filter((note) => {
     const matchesFilter = filter === "All" || note.subject === filter;
@@ -176,120 +161,135 @@ const LibraryTab = ({
   };
 
   return (
-    <Box sx={{ pb: 6, mt: 2 }}>
-      <Stack direction="row" spacing={1.5} sx={{ mb: 4 }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: 0.5,
-            borderRadius: "100px",
-            border: "1px solid #e2e8f0",
-            display: "flex",
-            alignItems: "center",
-            flex: 1,
-            bgcolor: "white",
-          }}
-        >
-          <TextField
-            fullWidth
-            variant="standard"
-            placeholder="Search your library..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              disableUnderline: true,
-              startAdornment: (
-                <InputAdornment position="start" sx={{ pl: 2 }}>
-                  <Search sx={{ color: "#94a3b8" }} />
-                </InputAdornment>
-              ),
-              endAdornment: searchQuery && (
-                <IconButton size="small" onClick={() => setSearchQuery("")}>
-                  <Clear fontSize="small" />
-                </IconButton>
-              ),
-            }}
-            sx={{ py: 1 }}
-          />
-        </Paper>
-        <Tooltip title="Refresh Cloud Library">
-          <IconButton
-            onClick={handleRefresh}
-            sx={{
-              bgcolor: "white",
-              border: "1px solid #e2e8f0",
-              p: 1.5,
-              transition: "0.3s",
-            }}
-          >
-            <Sync
-              sx={{
-                color: "#64748B",
-                animation: isRefreshing ? "spin 1s linear infinite" : "none",
-              }}
-            />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-
-      <Stack
-        direction="row"
-        spacing={1.5}
+    <Box sx={{ pb: 10, mt: 1 }}>
+      {/* Sticky Glassmorphism Header */}
+      <Box
         sx={{
-          overflowX: "auto",
-          mb: 3,
+          position: "sticky",
+          top: 0,
+          zIndex: 11,
+          bgcolor: alpha(theme.palette.background.default, 0.8),
+          backdropFilter: "blur(12px)",
+          pt: 2,
           pb: 1,
-          "&::-webkit-scrollbar": { display: "none" },
         }}
       >
-        {subjects.map((subj) => (
-          <Chip
-            key={subj}
-            label={subj}
-            onClick={() => setFilter(subj)}
+        <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+          <Paper
+            elevation={0}
             sx={{
-              px: 1,
-              py: 2.5,
-              borderRadius: "14px",
-              fontWeight: 800,
-              bgcolor: filter === subj ? "#6366F1" : "white",
-              color: filter === subj ? "white" : "#64748B",
-              border: "1px solid",
-              borderColor: filter === subj ? "#6366F1" : "#e2e8f0",
+              p: "4px 8px",
+              borderRadius: "100px",
+              border: `1px solid ${theme.palette.divider}`,
+              display: "flex",
+              alignItems: "center",
+              flex: 1,
+              bgcolor: isDark
+                ? alpha(theme.palette.background.paper, 0.5)
+                : "#fff",
             }}
-          />
-        ))}
-      </Stack>
+          >
+            <TextField
+              fullWidth
+              variant="standard"
+              placeholder="Search library..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                disableUnderline: true,
+                startAdornment: (
+                  <InputAdornment position="start" sx={{ pl: 1.5 }}>
+                    <Search sx={{ color: "text.secondary", fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <IconButton size="small" onClick={() => setSearchQuery("")}>
+                    <Clear fontSize="small" />
+                  </IconButton>
+                ),
+              }}
+            />
+          </Paper>
+          <Tooltip title="Sync">
+            <IconButton
+              onClick={handleRefresh}
+              sx={{
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: "16px",
+              }}
+            >
+              <Sync
+                sx={{
+                  color: "primary.main",
+                  animation: isRefreshing ? "spin 1s linear infinite" : "none",
+                  "@keyframes spin": {
+                    "0%": { transform: "rotate(0deg)" },
+                    "100%": { transform: "rotate(360deg)" },
+                  },
+                }}
+              />
+            </IconButton>
+          </Tooltip>
+        </Stack>
 
-      <Stack spacing={2}>
+        {/* Filter Chips */}
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            overflowX: "auto",
+            pb: 1,
+            "::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          {subjects.map((subj) => (
+            <Chip
+              key={subj}
+              label={subj}
+              onClick={() => setFilter(subj)}
+              sx={{
+                fontWeight: 600,
+                borderRadius: "100px",
+                bgcolor: filter === subj ? "text.primary" : "transparent",
+                color: filter === subj ? "background.paper" : "text.secondary",
+                border:
+                  filter === subj
+                    ? "none"
+                    : `1px solid ${theme.palette.divider}`,
+                "&:hover": {
+                  bgcolor:
+                    filter === subj
+                      ? "text.primary"
+                      : alpha(theme.palette.divider, 0.1),
+                },
+              }}
+            />
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Notes Container */}
+      <Stack spacing={2.5} sx={{ mt: 3 }}>
         {filteredNotes.map((note) => {
-          const style = getSubjectStyle(note.subject);
-          const isLocalOnly = typeof note.id === "number";
-          const isSyncing = note.isSyncing;
-
+          const style = getSubjectStyle(theme, note.subject);
           return (
             <Fade in key={note.id}>
               <Paper
                 elevation={0}
-                onClick={() => handleOpenNote(note)}
+                onClick={() => !note.isSyncing && handleOpenNote(note)}
                 sx={{
-                  p: 2,
+                  p: 2.5,
                   borderRadius: "24px",
-                  bgcolor: "white",
-                  border: "1px solid #f1f5f9",
-                  cursor: isSyncing ? "default" : "pointer",
-                  transition: "0.3s",
+                  bgcolor: isDark ? "#1E1F20" : "#fff",
+                  border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                  cursor: note.isSyncing ? "default" : "pointer",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   display: "flex",
                   alignItems: "center",
-                  opacity: isSyncing ? 0.6 : 1,
                   "&:hover": {
-                    transform: isSyncing ? "none" : "translateY(-3px)",
-                    boxShadow: isSyncing
-                      ? "none"
-                      : "0 10px 20px rgba(0,0,0,0.03)",
-                    borderColor: alpha(style.color, 0.3),
+                    borderColor: style.color,
+                    boxShadow: `0 8px 24px ${alpha(style.color, isDark ? 0.2 : 0.1)}`,
+                    transform: "translateY(-2px)",
                   },
                 }}
               >
@@ -297,10 +297,10 @@ const LibraryTab = ({
                   sx={{
                     bgcolor: style.bg,
                     color: style.color,
-                    width: 52,
-                    height: 52,
+                    width: 56,
+                    height: 56,
                     borderRadius: "16px",
-                    mr: 2,
+                    mr: 2.5,
                   }}
                 >
                   {style.icon}
@@ -312,7 +312,7 @@ const LibraryTab = ({
                     noWrap
                     sx={{
                       fontWeight: 800,
-                      color: "#1E293B",
+
                       fontSize: "0.95rem",
                     }}
                   >
@@ -340,17 +340,16 @@ const LibraryTab = ({
                         textOverflow: "ellipsis",
                       }}
                     >
-                      {toTitle(note.subject || "General")}
+                      {note.subject || "General"}
                     </Typography>
 
                     <Typography
                       variant="caption"
                       sx={{
-                        color: "#94a3b8",
+                        color: "text.secondary",
                         display: "flex",
                         alignItems: "center",
                         gap: 0.5,
-                        whiteSpace: "nowrap",
                       }}
                     >
                       <AccessTime sx={{ fontSize: 12 }} />
@@ -361,136 +360,125 @@ const LibraryTab = ({
                   </Stack>
                 </Box>
 
-                <Box sx={{ mr: 1 }}>
-                  {isSyncing ? (
-                    <CircularProgress
-                      size={16}
-                      thickness={5}
-                      sx={{ color: "#6366F1" }}
-                    />
-                  ) : isLocalOnly ? (
-                    <Tooltip title="Local Save (Not Synced)">
-                      <CloudOff sx={{ fontSize: 16, color: "#cbd5e1" }} />
-                    </Tooltip>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  {note.isSyncing ? (
+                    <CircularProgress size={20} sx={{ color: style.color }} />
                   ) : (
-                    <Tooltip title="Synced to Cloud">
-                      <CloudDone sx={{ fontSize: 16, color: "#10b981" }} />
-                    </Tooltip>
+                    <IconButton
+                      onClick={(e) => handleMenuOpen(e, note)}
+                      sx={{ color: "text.secondary" }}
+                    >
+                      <MoreVert />
+                    </IconButton>
                   )}
-                </Box>
-
-                <IconButton
-                  onClick={(e) => handleMenuOpen(e, note)}
-                  disabled={isSyncing}
-                >
-                  <MoreVert />
-                </IconButton>
+                </Stack>
               </Paper>
             </Fade>
           );
         })}
-
-        {filteredNotes.length === 0 && (
-          <Box sx={{ textAlign: "center", py: 8, opacity: 0.6 }}>
-            <MenuBook sx={{ fontSize: 48, mb: 2, color: "#6366F1" }} />
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              No Notes Found
-            </Typography>
-            <Typography variant="body2">
-              Try a different search or create a new note.
-            </Typography>
-          </Box>
-        )}
       </Stack>
+
+      {/* Empty State */}
+      {filteredNotes.length === 0 && (
+        <Box sx={{ textAlign: "center", py: 15 }}>
+          <AutoAwesome
+            sx={{ fontSize: 60, mb: 2, color: "primary.main", opacity: 0.2 }}
+          />
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{ fontWeight: 600 }}
+          >
+            Your library is clear
+          </Typography>
+          <Typography variant="body2" color="text.disabled">
+            No notes match your current filters.
+          </Typography>
+        </Box>
+      )}
 
       {/* Action Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
+        onClose={() => setAnchorEl(null)}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            minWidth: 180,
+            boxShadow: theme.shadows[10],
+          },
+        }}
       >
-        <MenuItem onClick={triggerQuizSetup}>
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            setSetupOpen(true);
+          }}
+        >
           <ListItemIcon>
             <AutoAwesome fontSize="small" sx={{ color: "#6366F1" }} />
           </ListItemIcon>
           <ListItemText
-            primary="Take AI Quiz"
-            primaryTypographyProps={{ fontWeight: 700 }}
+            primary="AI Quiz"
+            primaryTypographyProps={{ fontWeight: 600 }}
           />
         </MenuItem>
-        <MenuItem onClick={triggerDeleteConfirm} sx={{ color: "#ef4444" }}>
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            setDeleteConfirmOpen(true);
+          }}
+          sx={{ color: "error.main" }}
+        >
           <ListItemIcon>
-            <DeleteOutline fontSize="small" sx={{ color: "#ef4444" }} />
+            <DeleteOutline fontSize="small" color="error" />
           </ListItemIcon>
           <ListItemText
-            primary="Delete Note"
-            primaryTypographyProps={{ fontWeight: 700 }}
+            primary="Delete"
+            primaryTypographyProps={{ fontWeight: 600 }}
           />
         </MenuItem>
       </Menu>
 
-      {/* Delete Confirmation */}
-      <Dialog
-        open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-      >
-        <DialogTitle sx={{ fontWeight: 900 }}>Delete this note?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            This will permanently remove "{selectedNote?.title}" from your
-            library.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button
-            onClick={confirmDelete}
-            variant="contained"
-            sx={{ bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" } }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Quiz Setup Dialog */}
+      {/* Gemini Style Dialogs */}
       <Dialog
         open={setupOpen}
         onClose={() => setSetupOpen(false)}
-        PaperProps={{ sx: { borderRadius: "32px", p: 2 } }}
+        PaperProps={{ sx: { borderRadius: "28px", p: 1, maxWidth: 320 } }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
-          Quiz Density
-        </Typography>
-        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          {[5, 10, 20].map((num) => (
-            <Button
-              key={num}
-              variant={questionCount === num ? "contained" : "outlined"}
-              onClick={() => setQuestionCount(num)}
-              sx={{ flex: 1, borderRadius: "16px", py: 2, fontWeight: 800 }}
-            >
-              {num} Qs
-            </Button>
-          ))}
-        </Stack>
-        <Button
-          fullWidth
-          variant="contained"
-          startIcon={<PlayArrow />}
-          onClick={() => {
-            setSetupOpen(false);
-            handleLaunchQuiz(selectedNote, questionCount);
-          }}
-          sx={{
-            py: 2,
-            borderRadius: "16px",
-            fontWeight: 900,
-            bgcolor: "#6366F1",
-          }}
-        >
-          Generate Quiz
-        </Button>
+        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
+          Configure Quiz
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            How many questions should the AI generate for this session?
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            {[5, 10, 15].map((n) => (
+              <Button
+                key={n}
+                fullWidth
+                variant={questionCount === n ? "contained" : "outlined"}
+                onClick={() => setQuestionCount(n)}
+                sx={{ borderRadius: "12px", py: 1.5 }}
+              >
+                {n}
+              </Button>
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            onClick={() => handleLaunchQuiz(selectedNote, questionCount)}
+            sx={{ borderRadius: "100px" }}
+          >
+            Start Quiz
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

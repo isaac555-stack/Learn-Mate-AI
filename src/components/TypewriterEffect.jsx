@@ -1,12 +1,32 @@
 import { useState, useRef, useEffect } from "react";
-import { Box, Button, Typography, alpha } from "@mui/material";
+import {
+  Box,
+  Button,
+  Typography,
+  alpha,
+  useTheme,
+  keyframes,
+} from "@mui/material";
 import { KeyboardDoubleArrowRight, AutoAwesome } from "@mui/icons-material";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
-const TypewriterEffect = ({ text, speed = 10 }) => {
+const blink = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+`;
+
+const TypewriterEffect = ({ text, speed = 15 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
+  // Gemini Branding Constants
+  const brandBlue = isDark ? "#a8c7fa" : "#1a73e8";
+  const textPrimary = isDark ? "#e3e3e3" : "#1f1f1f";
+  const textSecondary = isDark ? "#c4c7c5" : "#444746";
+
   const [displayedText, setDisplayedText] = useState("");
   const [isFinished, setIsFinished] = useState(false);
   const timerRef = useRef(null);
@@ -22,47 +42,27 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
       return;
     }
 
-    // 1. APPEND LOGIC
-    if (text.startsWith(displayedText) && displayedText !== "") {
-      setIsFinished(false);
-      clearExistingTimer();
+    const isAppending = text.startsWith(displayedText) && displayedText !== "";
+    let i = isAppending ? displayedText.length : 0;
 
-      let i = displayedText.length;
+    setIsFinished(false);
+    clearExistingTimer();
 
-      timerRef.current = setInterval(() => {
-        if (i < text.length) {
-          const increment = text.length - i > 500 ? 3 : 1;
-          i += increment;
-          setDisplayedText(text.slice(0, i));
-        } else {
-          setDisplayedText(text);
-          clearExistingTimer();
-          setIsFinished(true);
-        }
-      }, speed);
-    }
-    // 2. FRESH START LOGIC
-    else {
-      setDisplayedText("");
-      setIsFinished(false);
-      clearExistingTimer();
-
-      let i = 0;
-      timerRef.current = setInterval(() => {
-        if (i < text.length) {
-          const increment = text.length > 500 ? 3 : 1;
-          i += increment;
-          setDisplayedText(text.slice(0, i));
-        } else {
-          setDisplayedText(text);
-          clearExistingTimer();
-          setIsFinished(true);
-        }
-      }, speed);
-    }
+    timerRef.current = setInterval(() => {
+      if (i < text.length) {
+        const remaining = text.length - i;
+        const increment = remaining > 1000 ? 8 : remaining > 300 ? 3 : 1;
+        i += increment;
+        setDisplayedText(text.slice(0, i));
+      } else {
+        setDisplayedText(text);
+        clearExistingTimer();
+        setIsFinished(true);
+      }
+    }, speed);
 
     return () => clearExistingTimer();
-  }, [text, speed]); // FIX 1: Added 'speed' to dependency array
+  }, [text, speed]);
 
   const handleSkip = () => {
     clearExistingTimer();
@@ -71,134 +71,153 @@ const TypewriterEffect = ({ text, speed = 10 }) => {
   };
 
   return (
-    <Box sx={{ position: "relative", minHeight: "100px" }}>
-      {!isFinished && (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            mb: 2,
-            color: "primary.main",
-            animation: "pulse 2s infinite",
-          }}
-        >
-          <AutoAwesome sx={{ fontSize: 16 }} />
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, letterSpacing: 1 }}
-          >
-            FORMATTING...
-          </Typography>
-        </Box>
-      )}
-
-      {!isFinished && displayedText.length > 20 && (
-        <Button
-          size="small"
-          onClick={handleSkip}
-          endIcon={<KeyboardDoubleArrowRight />}
-          sx={{
-            position: "absolute",
-            right: 0,
-            top: -45,
-            zIndex: 10,
-            borderRadius: "12px",
-            textTransform: "none",
-            fontWeight: 700,
-            bgcolor: alpha("#6366F1", 0.05),
-            color: "#6366F1",
-            "&:hover": { bgcolor: alpha("#6366F1", 0.1) },
-          }}
-        >
-          Skip
-        </Button>
-      )}
-
+    <Box sx={{ position: "relative" }}>
+      {/* 1. STATUS BAR */}
       <Box
         sx={{
-          lineHeight: 1.7,
-          fontSize: "1.0rem",
           display: "flex",
-          flexDirection: "column",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        {!isFinished && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <AutoAwesome
+              sx={{
+                fontSize: 16,
+                color: brandBlue,
+                animation: "spin 4s linear infinite",
+                "@keyframes spin": {
+                  from: { transform: "rotate(0deg)" },
+                  to: { transform: "rotate(360deg)" },
+                },
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 600,
+                color: textSecondary,
+                fontSize: "0.75rem",
+              }}
+            >
+              PrepFlow is thinking...
+            </Typography>
+          </Box>
+        )}
 
-          /* --- 1. USER QUESTION BUBBLE (BLOCKQUOTE) --- */
+        {!isFinished && displayedText.length > 50 && (
+          <Button
+            size="small"
+            onClick={handleSkip}
+            endIcon={<KeyboardDoubleArrowRight sx={{ fontSize: 16 }} />}
+            sx={{
+              borderRadius: "100px",
+              textTransform: "none",
+              fontSize: "0.7rem",
+              color: textSecondary,
+            }}
+          >
+            Skip
+          </Button>
+        )}
+      </Box>
+
+      {/* 2. MAIN MARKDOWN CONTENT */}
+      <Box
+        sx={{
+          lineHeight: 1.8,
+          fontSize: "1.05rem",
+          color: textPrimary, // PURE NEUTRAL TEXT
+          fontFamily: theme.typography.fontFamily,
+
+          /* Add these styles inside the Box sx in TypewriterEffect.jsx */
+
           "& blockquote": {
-            bgcolor: "#E9EEF6",
-            px: 2.5,
-            py: 1.5,
-            mx: 0,
-            my: 2,
-            borderRadius: "24px 24px 4px 24px",
-            border: "none",
+            /* 1. Alignment & Shape */
             alignSelf: "flex-end",
+            width: "fit-content",
             maxWidth: "85%",
-            display: "inline-block",
-            "& p": { m: 0, fontWeight: 500, lineHeight: 1.5 },
-          },
+            margin: "24px 0 24px auto", // Pushes it to the right
+            padding: "12px 20px",
+            borderRadius: "24px 24px 4px 24px", // Gemini's signature "User Bubble" rounding
 
-          /* --- 2. LISTS (THE CLEAN FIX) --- */
-          "& ul, & ol": {
-            paddingLeft: "1.5rem",
-            margin: "0.5rem 0 1.5rem 0",
+            /* 2. Gemini Exact Colors */
+            bgcolor: isDark ? "#1e1f20" : "#e1e5eb",
+            border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)"}`,
+
+            /* 3. Typography within bubble */
+            "& p": {
+              margin: 0,
+              fontSize: "1rem",
+              color: "text.primary",
+              fontWeight: 400,
+              lineHeight: 1.5,
+            },
+
+            /* Optional: Add a small "You" label above the bubble like Gemini */
           },
-          // FIX 2a: Only target unordered list items for custom bullets
-          "& ul > li": {
+          /* THE CURSOR: The only bright blue element in the text flow */
+          "&::after": !isFinished
+            ? {
+                content: '""',
+                display: "inline-block",
+                width: "8px",
+                height: "1.2em",
+                bgcolor: brandBlue,
+                borderRadius: "2px",
+                ml: 0.5,
+                verticalAlign: "middle",
+                animation: `${blink} 0.8s infinite`,
+                boxShadow: `0 0 10px ${alpha(brandBlue, 0.4)}`,
+              }
+            : {},
+
+          /* HEADERS: Large, Bold, but Neutral */
+          "& h1, & h2, & h3": {
+            fontWeight: 600,
+            color: textPrimary,
+            mt: 4,
             mb: 1.5,
-            display: "list-item",
-            listStyleType: "none",
+          },
+          "& h1": { fontSize: "1.6rem" },
+          "& h2": { fontSize: "1.4rem" },
+          "& h3": { fontSize: "1.2rem" },
+
+          /* STRONG: No more blue bolding. High-contrast neutral instead. */
+          "& strong": { fontWeight: 700, color: textPrimary },
+
+          /* LISTS: Clean, muted bullets */
+          "& ul": { listStyleType: "none", pl: 0, mb: 3 },
+          "& li": {
+            mb: 1.5,
+            pl: 3,
             position: "relative",
-            pl: 0.5,
             "&::before": {
               content: '"•"',
-              color: "#070707",
-              fontWeight: "bold",
-              fontSize: "1.0rem",
               position: "absolute",
-              left: "-1.2rem",
-              top: "-0.1rem",
+              left: 8,
+              color: textSecondary,
+              fontWeight: "bold",
             },
-            "& p": { display: "inline", m: 0, fontSize: "1.0rem" },
-          },
-          // FIX 2b: Target ordered list items separately to preserve numbers
-          "& ol > li": {
-            mb: 1.5,
-            display: "list-item",
-            pl: 0.5,
-            "& p": { display: "inline", m: 0, fontSize: "1.0rem" },
           },
 
-          /* --- 3. HEADERS & DIVIDERS --- */
-          "& h2": {
-            color: "#1f1f1f",
-            mt: 3,
-            mb: 1.5,
-            fontWeight: 700,
-            fontSize: "1.0rem",
+          /* BLOCKS: Subtly elevated surfaces */
+          "& .katex-display": {
+            my: 4,
+            p: 2,
+            bgcolor: isDark ? alpha("#fff", 0.03) : "#f8f9fa",
+            borderRadius: "16px",
+            border: `1px solid ${theme.palette.divider}`,
           },
-          "& h3": {
-            color: "#0d0e10",
-            mt: 2,
-            mb: 1,
-            fontSize: "1.0rem",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.05rem",
-          },
-          "& h1": {
-            mt: 2,
-            mb: 1,
-            fontSize: "1.0rem",
-            fontWeight: 900,
-            textTransform: "uppercase",
-          },
-          "& hr": { border: "none", borderTop: "1px solid #e2e8f0", my: 3 },
 
-          /* --- 4. EXAM ALERTS & STRONG TEXT --- */
-          "& strong": { fontWeight: 700, color: "#000000" },
-
-          /* --- 5. LATEX SPACING --- */
-          "& .katex-display": { my: 2, overflowX: "auto", overflowY: "hidden" },
+          /* LINKS: The functional blue */
+          "& a": {
+            color: brandBlue,
+            textDecoration: "none",
+            "&:hover": { textDecoration: "underline" },
+          },
         }}
       >
         <ReactMarkdown

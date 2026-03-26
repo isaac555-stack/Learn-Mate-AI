@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Box,
-  Paper,
   Fade,
   Typography,
   Chip,
   Stack,
   alpha,
   CircularProgress,
+  useTheme,
 } from "@mui/material";
 import {
-  MenuBook,
   Psychology,
   CloudDone,
   CloudSync,
+  AutoAwesome,
 } from "@mui/icons-material";
 import TypewriterEffect from "./TypewriterEffect";
 
@@ -22,116 +22,100 @@ const SummaryView = ({
   metadata,
   isDeepDiving,
   scanSessionId,
-  isLoadingQuestions,
-  // Pass this down if you want to show a 'Saved' vs 'Saving' state
   isSyncing = false,
 }) => {
-  const scrollRef = useRef(null);
-  const [userIsScrolling, setUserIsScrolling] = useState(false);
+  const theme = useTheme();
 
-  // Auto-scroll logic: Keep the newest AI response in view
-  useEffect(() => {
-    if (!userIsScrolling && isDeepDiving) {
-      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  // 1. Create a Ref for the very bottom of the content
+  const messagesEndRef = useRef(null);
+  const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
+
+  // 2. Auto-scroll logic: Only scrolls if the user hasn't manually moved up
+  const scrollToBottom = () => {
+    if (!userHasScrolledUp) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [summary, isDeepDiving, userIsScrolling]);
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [summary, isDeepDiving]); // Fires every time text updates
+
+  // 3. Detect if user is manually scrolling (to stop hijacking their screen)
+  useEffect(() => {
+    const handleScroll = () => {
+      const isAtBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 100;
+      setUserHasScrolledUp(!isAtBottom);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <Fade in timeout={800}>
       <Box sx={{ position: "relative" }}>
-        {/* 1. TOP METADATA & STATUS BAR */}
+        {/* STICKY HEADER - ChatGPT style */}
         {metadata && (
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            sx={{ px: { xs: 1, md: 3 }, mb: 2, alignItems: "center" }}
+          <Box
+            sx={{
+              position: "sticky",
+              top: { xs: 12, md: 24 },
+              zIndex: 10,
+              bgcolor: alpha(theme.palette.background.default, 0.9),
+              backdropFilter: "blur(8px)",
+              py: 1.5,
+              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              mb: 2,
+            }}
           >
             <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={1}
-              alignItems={{ xs: "flex-start", md: "center" }}
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ px: 1 }}
             >
-              <Chip
-                label={metadata.subject || "General Study"}
-                size="small"
-                sx={{
-                  fontWeight: 900,
-                  color: "#64748b",
-                  letterSpacing: 1,
-                  borderRadius: "8px",
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{ color: "#64748b", fontWeight: 700 }}
-              >
-                {metadata.topic || "Exam Prep"}
-              </Typography>
-            </Stack>
-
-            {/* SYNC INDICATORS */}
-            <Stack direction="row" spacing={2} alignItems="center">
-              {/* Cloud Sync State */}
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                {isDeepDiving || isSyncing ? (
-                  <>
-                    <CloudSync sx={{ fontSize: 16, color: "#6366F1" }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "#6366F1", fontWeight: 800 }}
-                    >
-                      Syncing...
-                    </Typography>
-                  </>
-                ) : (
-                  <>
-                    <CloudDone sx={{ fontSize: 16, color: "#10B981" }} />
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "#10B981", fontWeight: 800 }}
-                    >
-                      Saved
-                    </Typography>
-                  </>
-                )}
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  icon={<AutoAwesome sx={{ fontSize: "14px !important" }} />}
+                  label={metadata.subject || "General Study"}
+                  size="small"
+                  sx={{
+                    fontWeight: 800,
+                    color: "primary.main",
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, color: "text.secondary" }}
+                >
+                  {metadata.topic}
+                </Typography>
               </Stack>
 
-              {/* JAMB Syncing */}
-              {isLoadingQuestions && (
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CircularProgress
-                    size={12}
-                    thickness={6}
-                    sx={{ color: "#6366F1" }}
+              <Box>
+                {isSyncing ? (
+                  <CloudSync
+                    className="pulse-animation"
+                    sx={{ fontSize: 18, color: "primary.main" }}
                   />
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "#6366F1", fontWeight: 800 }}
-                  >
-                    JAMB Sync
-                  </Typography>
-                </Stack>
-              )}
+                ) : (
+                  <CloudDone sx={{ fontSize: 18, color: "success.main" }} />
+                )}
+              </Box>
             </Stack>
-          </Stack>
+          </Box>
         )}
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, md: 5 },
-            borderRadius: "32px",
-            bgcolor: alpha("#F8FAFC", 0.5), // Subtle off-white background
+        {/* CONTENT AREA */}
+        <Box sx={{ px: 1, pb: 10 }}>
+          <Box sx={{ "& strong": { color: "primary.main" }, lineHeight: 1.8 }}>
+            <TypewriterEffect key={scanSessionId} text={summary} />
+          </Box>
 
-            minHeight: "60vh",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          {/* 2. THE CONTENT (Typewriter creates the 'AI is typing' feel) */}
-          <TypewriterEffect key={scanSessionId} text={summary} />
-
-          {/* 3. DEEP DIVE LOADING STATE */}
           {isDeepDiving && (
             <Fade in>
               <Box
@@ -139,36 +123,44 @@ const SummaryView = ({
                   p: 3,
                   mt: 4,
                   borderRadius: "20px",
-                  bgcolor: alpha("#6366F1", 0.05),
-                  border: "1px dashed",
-                  borderColor: alpha("#6366F1", 0.3),
+                  bgcolor: alpha(theme.palette.primary.main, 0.03),
+                  border: `1px dashed ${alpha(theme.palette.primary.main, 0.3)}`,
                   display: "flex",
                   alignItems: "center",
-                  gap: 2,
+                  gap: 3,
                 }}
               >
-                <Psychology
-                  className="pulse-animation"
-                  sx={{ color: "#c21dbc", fontSize: 32 }}
-                />
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 800, color: "#6366F1" }}
-                  >
-                    PrepFlow is Deep-Diving...
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "#6366F1", opacity: 0.8 }}
-                  >
-                    Connecting your notes to the exam syllabus
-                  </Typography>
+                <Box sx={{ position: "relative" }}>
+                  <CircularProgress size={32} />
+                  <Psychology
+                    sx={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      fontSize: 18,
+                    }}
+                  />
                 </Box>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                  Deep Diving...
+                </Typography>
               </Box>
             </Fade>
           )}
-        </Paper>
+
+          {/* 4. THE MAGIC ANCHOR: This is what we scroll into view */}
+          <div ref={messagesEndRef} style={{ height: "1px" }} />
+        </Box>
+
+        <style>{`
+          @keyframes pulse-soft {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+          }
+          .pulse-animation { animation: pulse-soft 2s infinite; }
+        `}</style>
       </Box>
     </Fade>
   );
