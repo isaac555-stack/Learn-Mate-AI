@@ -1,14 +1,6 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations().then((regs) => {
-          for (let reg of regs)
-            reg.unregister().then(() => window.location.reload());
-        });
-      }
-    </script>
     <meta charset="UTF-8" />
     <title>PrepFlow — Master JAMB & WAEC Exams</title>
     <link rel="icon" type="image/svg+xml" href="/PrepFlowIcon192x192.png" />
@@ -58,7 +50,6 @@
   </head>
   <body>
     <div id="root"></div>
-
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
