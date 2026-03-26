@@ -10,6 +10,9 @@ export default defineConfig({
       workbox: {
         cleanupOutdatedCaches: true, // Automatically deletes old hashed files
         skipWaiting: true,
+        // 1. Clean up the "Cache.put" mess by deleting old versions
+
+        navigateFallback: null,
         clientsClaim: true,
       },
       includeAssets: [
