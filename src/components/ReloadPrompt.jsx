@@ -11,10 +11,6 @@ import {
 } from "@mui/material";
 import { Close as CloseIcon, Update, CloudDone } from "@mui/icons-material";
 
-function TransitionUp(props) {
-  return <Slide {...props} direction="up" />;
-}
-
 function ReloadPrompt() {
   const theme = useTheme();
   const {
@@ -54,7 +50,6 @@ function ReloadPrompt() {
         open={needRefresh}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         onClose={handleClose}
-        TransitionComponent={TransitionUp}
         sx={{ mb: { xs: 2, md: 4 }, px: 2 }}
       >
         <Alert
@@ -96,7 +91,6 @@ function ReloadPrompt() {
         autoHideDuration={4000}
         onClose={handleClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        TransitionComponent={TransitionUp}
         sx={{ mb: { xs: 2, md: 4 }, px: 2 }}
       >
         <Alert
