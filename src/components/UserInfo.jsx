@@ -341,6 +341,7 @@ const OnboardingFlow = ({ onComplete }) => {
                 mt: 4,
                 py: 2,
                 borderRadius: "12px",
+                color: "white",
                 bgcolor: ACCENT,
                 fontWeight: 800,
                 textTransform: "none",
