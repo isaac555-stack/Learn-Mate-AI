@@ -2,23 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>PrepFlow — Master JAMB & WAEC Exams</title>
-    <link rel="icon" type="image/svg+xml" href="/PrepFlowIcon192x192.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <meta
-      name="google-site-verification"
-      content="6VcTiGvEKLx2aTjqZaF24zejhDTJ71MxU-e8j67ILlI"
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0"
     />
+    <title>PrepFlow — Scan. Study. Succeed.</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <meta name="title" content="PrepFlow — Master JAMB & WAEC Exams" />
     <meta
       name="description"
-      content="Ace your JAMB and WAEC exams with PrepFlow. Scan textbooks and handwritten notes for instant summaries, AI-powered practice questions, and smart study guides."
+      content="Turn textbooks into smart AI notes. The ultimate secret weapon for JAMB & WAEC students with instant summaries and practice questions."
     />
     <meta
       name="keywords"
       content="JAMB 2026, WAEC prep, AI study assistant, Nigerian exams, past questions, note scanner"
     />
-
+    <meta
+      name="google-site-verification"
+      content="6VcTiGvEKLx2aTjqZaF24zejhDTJ71MxU-e8j67ILlI"
+    />
     <meta name="google-adsense-account" content="ca-pub-7630858610390608" />
 
     <meta property="og:type" content="website" />
@@ -26,29 +31,50 @@
     <meta property="og:title" content="PrepFlow: Scan. Study. Succeed." />
     <meta
       property="og:description"
-      content="Turn your bulky textbooks into smart AI notes. The ultimate secret weapon for JAMB & WAEC students."
+      content="Turn your bulky textbooks into smart AI notes. Ace JAMB & WAEC with your AI study partner."
     />
-    <link rel="icon" type="image/png" href="/PrepFlowIconCool.webp" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="PrepFlow — Smart Study for Nigeria" />
     <meta
-      name="twitter:description"
+      property="og:image"
+      content="https://prepflow-ai.vercel.app/og-image.png"
+    />
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://prepflow-ai.vercel.app/" />
+    <meta
+      property="twitter:title"
+      content="PrepFlow — Smart Study for Nigeria"
+    />
+    <meta
+      property="twitter:description"
       content="AI-powered note scanning and summary generation for Nigerian students."
     />
+    <meta
+      property="twitter:image"
+      content="https://prepflow-ai.vercel.app/og-image.png"
+    />
 
+    <link rel="icon" type="image/png" href="/PrepFlowIconCool.webp" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#090b29" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
       content="black-translucent"
     />
-
-    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="PrepFlow" />
-    <meta name="theme-color" content="#ffffff" />
+
+    <style>
+      /* Prevent white flash on load before React kicks in */
+      body {
+        margin: 0;
+        background-color: #090b29;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+    </style>
   </head>
   <body>
+    <noscript>You need to enable JavaScript to run PrepFlow.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
