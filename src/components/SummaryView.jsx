@@ -26,11 +26,22 @@ const SummaryView = ({
 }) => {
   const theme = useTheme();
 
-  // 1. Create a Ref for the very bottom of the content
-  const messagesEndRef = useRef(null);
+  // Refs for Gemini-style viewport control
+  const topOfMessageRef = useRef(null); // Anchor for the start of the interaction
+  const messagesEndRef = useRef(null); // Anchor for the typewriter progress
   const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
 
-  // 2. Auto-scroll logic: Only scrolls if the user hasn't manually moved up
+  // 1. GEMINI FLOW: Snap to top when a new question/session starts
+  useEffect(() => {
+    if (summary) {
+      topOfMessageRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [scanSessionId]); // Fires only when the ID changes (new interaction)
+
+  // 2. AUTO-SCROLL: Follow the typewriter as it types
   const scrollToBottom = () => {
     if (!userHasScrolledUp) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -38,15 +49,17 @@ const SummaryView = ({
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [summary, isDeepDiving]); // Fires every time text updates
+    // Small timeout to ensure the DOM has updated with new typewriter text
+    const timeout = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timeout);
+  }, [summary, isDeepDiving]);
 
-  // 3. Detect if user is manually scrolling (to stop hijacking their screen)
+  // 3. SCROLL DETECTION: Don't hijack the screen if the user is looking at something else
   useEffect(() => {
     const handleScroll = () => {
       const isAtBottom =
         window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 100;
+        document.documentElement.scrollHeight - 150;
       setUserHasScrolledUp(!isAtBottom);
     };
 
@@ -56,13 +69,17 @@ const SummaryView = ({
 
   return (
     <Fade in timeout={800}>
-      <Box sx={{ position: "relative" }}>
-        {/* STICKY HEADER - ChatGPT style */}
+      {/* minHeight ensures that the "Deep Diving" state doesn't feel cramped */}
+      <Box sx={{ position: "relative", minHeight: "100vh" }}>
+        {/* THE TOP ANCHOR: Pushes previous summaries out of view */}
+        <div ref={topOfMessageRef} style={{ height: "1px" }} />
+
+        {/* STICKY HEADER */}
         {metadata && (
           <Box
             sx={{
               position: "sticky",
-              top: { xs: 12, md: 24 },
+              top: 0,
               zIndex: 10,
               bgcolor: alpha(theme.palette.background.default, 0.9),
               backdropFilter: "blur(8px)",
@@ -149,8 +166,8 @@ const SummaryView = ({
             </Fade>
           )}
 
-          {/* 4. THE MAGIC ANCHOR: This is what we scroll into view */}
-          <div ref={messagesEndRef} style={{ height: "1px" }} />
+          {/* BOTTOM ANCHOR: For typewriter auto-scrolling */}
+          <div ref={messagesEndRef} style={{ height: "50px" }} />
         </Box>
 
         <style>{`
