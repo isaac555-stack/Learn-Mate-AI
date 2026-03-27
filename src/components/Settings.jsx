@@ -32,7 +32,7 @@ import { supabase } from "../services/questionsEngine";
 import { ColorModeContext } from "../context/ColorMode";
 
 // 🔹 Constants: These must match your DB constraints exactly.
-const STREAMS = ["science", "art", "Commerce"];
+const STREAMS = ["Science", "Art", "Commerce"];
 const GOALS = [
   { id: "exam", label: "Ace an exam (JAMB/WAEC)" },
   { id: "mastery", label: "Deep Mastery" },
@@ -70,19 +70,10 @@ const StudentProfile = () => {
         return val; // Returns the ID if it's already correct
       };
 
-      const normalizeStream = (val) => {
-        if (!val) return "";
-        const lowerVal = val.toLowerCase();
-        if (lowerVal === "science") return "science";
-        if (lowerVal === "art") return "art";
-        if (lowerVal === "commerce") return "Commerce"; // Matches your constant case
-        return val;
-      };
-
       setFormData({
         name: profile.name || "",
         age: profile.age || "",
-        stream: normalizeStream(profile.stream),
+        stream: profile.stream,
         goal: normalizeGoal(profile.goal),
       });
     }
