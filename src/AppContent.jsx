@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Box } from "@mui/material";
 import { supabase } from "./services/questionsEngine.js";
 import { useUser } from "./context/UserContext.jsx";
 
 // Components
-import LoadingScreen from "./components/LoadingScreen"; // Move that pretty Rocket component here
+import LoadingScreen from "./components/LoadingScreen";
 import Scanner from "./components/Scanner";
 import LandingPage from "./pages/LandingPage";
 import ReloadPrompt from "./components/ReloadPrompt";
@@ -19,59 +19,81 @@ function AppContent() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const { profile, refreshProfile, loading: isProfileLoading } = useUser();
 
+  // Memoize syncUser so it doesn't change on every render
+  const syncUser = useCallback(
+    async (currentSession, isMounted) => {
+      if (!isMounted) return;
+
+      setSession(currentSession);
+
+      if (currentSession?.user) {
+        // Fetch profile and wait for it
+        await refreshProfile(currentSession.user.id);
+      }
+
+      if (isMounted) setIsAuthLoading(false);
+    },
+    [refreshProfile],
+  );
+
   useEffect(() => {
     let mounted = true;
 
-    // Helper to sync user data
-    const syncUser = async (currentSession) => {
-      setSession(currentSession);
-      if (currentSession?.user) {
-        await refreshProfile(currentSession.user.id);
-      }
-      if (mounted) setIsAuthLoading(false);
+    // 1. Initial Session Check
+    const getInitialSession = async () => {
+      const {
+        data: { session: initialSession },
+      } = await supabase.auth.getSession();
+      await syncUser(initialSession, mounted);
     };
 
-    // Initial check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      syncUser(session);
-    });
+    getInitialSession();
 
-    // Listen for Auth changes (Login/Logout)
+    // 2. Auth State Listener
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      syncUser(session);
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      syncUser(newSession, mounted);
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [refreshProfile]);
+  }, [syncUser]);
 
   const handleOnboardingComplete = async (profileData) => {
     try {
+      if (!session?.user) return;
+
       const { error } = await supabase.from("user_profiles").upsert({
         id: session.user.id,
         ...profileData,
         updated_at: new Date().toISOString(),
       });
+
       if (error) throw error;
+
+      // Force refresh profile so the UI updates and redirects to /app
       await refreshProfile(session.user.id);
     } catch (error) {
       console.error("Onboarding Error:", error.message);
     }
   };
 
-  // Determine if we show the rocket ship
+  // Determine global loading state
+  // We only care about isProfileLoading IF we have a session
   const isGlobalLoading = isAuthLoading || (session && isProfileLoading);
+
   if (isGlobalLoading) return <LoadingScreen />;
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "background.default", // Uses theme color
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "background.default",
         color: "text.primary",
       }}
     >
@@ -87,7 +109,7 @@ function AppContent() {
           <Route path="/legal" element={<Legal />} />
           <Route path="/contact" element={<ContactSection />} />
 
-          {/* Protected Onboarding */}
+          {/* Logic: Need Session? -> Need Profile? -> Go to Onboarding or App */}
           <Route
             path="/onboarding"
             element={
@@ -103,7 +125,6 @@ function AppContent() {
             }
           />
 
-          {/* Protected Main App */}
           <Route
             path="/app"
             element={
@@ -122,7 +143,6 @@ function AppContent() {
             }
           />
 
-          {/* Protected Settings/Profile */}
           <Route
             path="/profile"
             element={
@@ -137,6 +157,8 @@ function AppContent() {
               )
             }
           />
+
+          {/* Wildcard Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Box>
