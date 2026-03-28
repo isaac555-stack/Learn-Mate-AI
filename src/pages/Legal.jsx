@@ -54,7 +54,6 @@ const Legal = () => {
           <Box
             sx={{
               pl: { md: 6 },
-              borderLeft: `2px solid ${alpha(ACCENT, 0.2)}`,
             }}
           >
             <Typography
