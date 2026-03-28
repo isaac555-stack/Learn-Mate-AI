@@ -130,9 +130,8 @@ const OptionButton = ({ index, label, state, disabled, onClick }) => {
             String.fromCharCode(65 + index)
           )}
         </Box>
-        <Typography variant="body1" sx={{ textAlign: "left", fontWeight: 400 }}>
-          <MarkdownRenderer content={label} />
-        </Typography>
+
+        <MarkdownRenderer content={label} />
       </Stack>
     </Button>
   );
@@ -325,14 +324,9 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                 }}
               />
 
-              <Typography
-                variant="h5"
-                sx={{ mb: 4, fontWeight: 400, color: "text.primary" }}
-              >
-                <MarkdownRenderer content={currentQuestion?.question} />
-              </Typography>
+              <MarkdownRenderer content={currentQuestion?.question} />
 
-              <Stack spacing={1.5}>
+              <Stack spacing={1.5} mt={3}>
                 {currentQuestion?.options.map((opt, i) => {
                   const isCorrect = i === currentQuestion.correctAnswer;
                   const isSelected = i === selectedAnswer;
@@ -400,12 +394,9 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                         >
                           QUESTION {idx + 1}
                         </Typography>
-                        <Typography
-                          variant="subtitle1"
-                          sx={{ my: 1, fontWeight: 500 }}
-                        >
-                          <MarkdownRenderer content={q.question} />
-                        </Typography>
+
+                        <MarkdownRenderer content={q.question} />
+
                         <Box
                           sx={{
                             p: 2,
@@ -427,12 +418,8 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                               EXPLANATION
                             </Typography>
                           </Stack>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: "text.secondary" }}
-                          >
-                            <MarkdownRenderer content={q.explanation} />
-                          </Typography>
+
+                          <MarkdownRenderer content={q.explanation} />
                         </Box>
                       </Paper>
                     ))}
