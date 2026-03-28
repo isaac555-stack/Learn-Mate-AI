@@ -326,9 +326,9 @@ const LandingPage = () => {
                     mb: 3,
                   }}
                 >
-                  Turn Notes into <br />
+                  Study Smarter. <br />
                   <Box component="span" sx={{ color: ACCENT }}>
-                    Perfect Practice.
+                    Ace Your Exams.
                   </Box>
                 </Typography>
 
@@ -336,8 +336,9 @@ const LandingPage = () => {
                   variant="h6"
                   sx={{ color: alpha("#FFF", 0.7), mb: 5, fontWeight: 400 }}
                 >
-                  Snap a photo of your handwritten notes and let our AI generate
-                  WAEC/JAMB style practice questions in seconds.
+                  Transform your handwritten notes into personalized WAEC and
+                  JAMB practice tests. Let PrepFlow handle the prep while you
+                  focus on the score.
                 </Typography>
 
                 {status === "success" ? (
