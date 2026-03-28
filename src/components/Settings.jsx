@@ -39,6 +39,31 @@ const GOALS = [
   { id: "quick", label: "Quick Homework Help" },
 ];
 
+const InfoRow = ({ label, value, editingComponent, isEditing }) => (
+  <Box sx={{ mb: 3 }}>
+    <Typography
+      variant="caption"
+      sx={{
+        color: "primary.main",
+        fontWeight: 800,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+      }}
+    >
+      {label}
+    </Typography>
+    <Box sx={{ mt: 0.5 }}>
+      {isEditing ? (
+        editingComponent
+      ) : (
+        <Typography variant="body1" fontWeight={600} color="text.primary">
+          {/* If it's the Age field, we append 'years old' only here */}
+          {label === "Age" && value ? `${value} years old` : value || "—"}
+        </Typography>
+      )}
+    </Box>
+  </Box>
+);
 const StudentProfile = () => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -127,30 +152,6 @@ const StudentProfile = () => {
     );
 
   // Modular Info Row for cleaner JSX
-  const InfoRow = ({ label, value, editingComponent }) => (
-    <Box sx={{ mb: 3 }}>
-      <Typography
-        variant="caption"
-        sx={{
-          color: "primary.main",
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: 1,
-        }}
-      >
-        {label}
-      </Typography>
-      <Box sx={{ mt: 0.5 }}>
-        {isEditing ? (
-          editingComponent
-        ) : (
-          <Typography variant="body1" fontWeight={600} color="text.primary">
-            {value || "—"}
-          </Typography>
-        )}
-      </Box>
-    </Box>
-  );
 
   return (
     <Box sx={{ maxWidth: 650, mx: "auto", mt: { xs: 2, md: 4 }, p: 2, pb: 8 }}>
@@ -248,6 +249,7 @@ const StudentProfile = () => {
         <Box>
           <InfoRow
             label="Full Name"
+            isEditing={isEditing}
             value={formData.name}
             editingComponent={
               <TextField
@@ -264,7 +266,8 @@ const StudentProfile = () => {
             <Box sx={{ flex: 1 }}>
               <InfoRow
                 label="Age"
-                value={formData.age ? `${formData.age} years old` : "—"}
+                value={formData.age} // Just pass the number
+                isEditing={isEditing}
                 editingComponent={
                   <TextField
                     fullWidth
@@ -281,6 +284,7 @@ const StudentProfile = () => {
               <InfoRow
                 label="Academic Stream"
                 value={formData.stream}
+                isEditing={isEditing}
                 editingComponent={
                   <TextField
                     select
@@ -308,6 +312,7 @@ const StudentProfile = () => {
           <InfoRow
             label="Learning Goal"
             value={displayGoalLabel}
+            isEditing={isEditing}
             editingComponent={
               <TextField
                 select
