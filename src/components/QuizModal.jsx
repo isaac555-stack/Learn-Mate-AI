@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Typography,
   Button,
@@ -31,76 +31,191 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 
-const QuizModal = ({ open, onClose, topic, questions = [] }) => {
+// --- Sub-Components ---
+
+const MarkdownRenderer = ({ content }) => (
+  <Box
+    sx={{
+      "& p": { m: 0, display: "inline" },
+      "& .katex": { fontSize: "1.1em" },
+    }}
+  >
+    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+      {content || ""}
+    </ReactMarkdown>
+  </Box>
+);
+
+const OptionButton = ({ index, label, state, disabled, onClick }) => {
   const theme = useTheme();
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(40);
-  const [showReview, setShowReview] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-  const [userChoices, setUserChoices] = useState([]);
 
-  const currentQuestion = useMemo(
-    () => questions?.[currentIdx],
-    [questions, currentIdx],
-  );
+  // Mapping states to Gemini-inspired adaptive colors
+  const colors = {
+    success: {
+      main: theme.palette.success.main,
+      bg: alpha(
+        theme.palette.success.main,
+        theme.palette.mode === "dark" ? 0.15 : 0.08,
+      ),
+      border: theme.palette.success.main,
+    },
+    error: {
+      main: theme.palette.error.main,
+      bg: alpha(
+        theme.palette.error.main,
+        theme.palette.mode === "dark" ? 0.15 : 0.08,
+      ),
+      border: theme.palette.error.main,
+    },
+    default: {
+      main: theme.palette.divider,
+      bg: theme.palette.background.paper,
+      border: theme.palette.divider,
+    },
+  };
 
-  // Unified Markdown Renderer for Questions/Options/Explanations
-  const MarkdownRenderer = ({ content }) => (
-    <Box
+  const activeColor = colors[state] || colors.default;
+
+  return (
+    <Button
+      fullWidth
+      onClick={() => onClick(index)}
+      disabled={disabled}
       sx={{
-        "& p": { m: 0, display: "inline" },
-        "& .katex": { fontSize: "1.1em" },
+        p: 2,
+        borderRadius: "12px", // Slightly less than global pill for options
+        justifyContent: "flex-start",
+        border: `1px solid ${activeColor.border}`,
+        bgcolor: activeColor.bg,
+        transition: "all 0.2s ease-in-out",
+        "&:hover": {
+          bgcolor: alpha(theme.palette.primary.main, 0.04),
+          borderColor: theme.palette.primary.main,
+        },
+        "&.Mui-disabled": {
+          color: theme.palette.text.primary,
+          opacity: 1,
+          borderColor: activeColor.border,
+        },
       }}
     >
-      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-        {content || ""}
-      </ReactMarkdown>
-    </Box>
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        sx={{ width: "100%" }}
+      >
+        <Box
+          sx={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "0.85rem",
+            fontWeight: 700,
+            bgcolor:
+              state === "default"
+                ? alpha(theme.palette.text.secondary, 0.1)
+                : activeColor.main,
+            color: state === "default" ? theme.palette.text.secondary : "white",
+          }}
+        >
+          {state === "success" ? (
+            <CheckCircle sx={{ fontSize: 18 }} />
+          ) : state === "error" ? (
+            <Cancel sx={{ fontSize: 18 }} />
+          ) : (
+            String.fromCharCode(65 + index)
+          )}
+        </Box>
+        <Typography variant="body1" sx={{ textAlign: "left", fontWeight: 400 }}>
+          <MarkdownRenderer content={label} />
+        </Typography>
+      </Stack>
+    </Button>
   );
+};
 
-  const handleNext = useCallback(() => {
-    if (currentIdx < questions.length - 1) {
-      setCurrentIdx((prev) => prev + 1);
-      setSelectedAnswer(null);
-      setTimeLeft(40);
-    } else {
-      setIsFinished(true);
-    }
-  }, [currentIdx, questions.length]);
+// --- Main Component ---
+
+const QuizModal = ({ open, onClose, topic, questions = [] }) => {
+  const theme = useTheme();
+
+  const [gameState, setGameState] = useState({
+    currentIdx: 0,
+    selectedAnswer: null,
+    score: 0,
+    timeLeft: 40,
+    isFinished: false,
+    showReview: false,
+    userChoices: [],
+  });
+
+  const {
+    currentIdx,
+    selectedAnswer,
+    score,
+    timeLeft,
+    isFinished,
+    showReview,
+    userChoices,
+  } = gameState;
+  const currentQuestion = questions[currentIdx];
 
   const handleSelect = useCallback(
     (index) => {
       if (selectedAnswer !== null) return;
-      setSelectedAnswer(index);
-      setUserChoices((prev) => [...prev, index]);
-      if (index === currentQuestion?.correctAnswer)
-        setScore((prev) => prev + 1);
+      setGameState((prev) => ({
+        ...prev,
+        selectedAnswer: index,
+        userChoices: [...prev.userChoices, index],
+        score:
+          index === questions[prev.currentIdx].correctAnswer
+            ? prev.score + 1
+            : prev.score,
+      }));
     },
-    [selectedAnswer, currentQuestion],
+    [selectedAnswer, questions],
   );
 
-  // Timer Logic
+  const handleNext = () => {
+    if (currentIdx < questions.length - 1) {
+      setGameState((prev) => ({
+        ...prev,
+        currentIdx: prev.currentIdx + 1,
+        selectedAnswer: null,
+        timeLeft: 40,
+      }));
+    } else {
+      setGameState((prev) => ({ ...prev, isFinished: true }));
+    }
+  };
+
+  const resetExam = () =>
+    setGameState({
+      currentIdx: 0,
+      selectedAnswer: null,
+      score: 0,
+      timeLeft: 40,
+      isFinished: false,
+      showReview: false,
+      userChoices: [],
+    });
+
   useEffect(() => {
     if (!open || isFinished || selectedAnswer !== null || showReview) return;
     if (timeLeft === 0) {
-      handleSelect(-1); // Auto-fail on timeout
+      handleSelect(-1);
       return;
     }
-    const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+    const timer = setInterval(
+      () => setGameState((p) => ({ ...p, timeLeft: p.timeLeft - 1 })),
+      1000,
+    );
     return () => clearInterval(timer);
   }, [timeLeft, open, isFinished, selectedAnswer, showReview, handleSelect]);
-
-  const resetExam = () => {
-    setCurrentIdx(0);
-    setSelectedAnswer(null);
-    setScore(0);
-    setTimeLeft(40);
-    setShowReview(false);
-    setIsFinished(false);
-    setUserChoices([]);
-  };
 
   if (!open || !questions.length) return null;
 
@@ -110,41 +225,41 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
         sx={{
           position: "fixed",
           inset: 0,
-          bgcolor: "#F8FAFC",
           zIndex: 9999,
+          bgcolor: "background.default",
           overflowY: "auto",
         }}
       >
-        {/* HEADER SECTION */}
+        {/* Sticky Header */}
         <Box
           sx={{
             p: 2,
-            bgcolor: "white",
-            borderBottom: "1px solid #E2E8F0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
             position: "sticky",
             top: 0,
             zIndex: 10,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            bgcolor: "background.default",
           }}
         >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <HistoryEdu sx={{ color: "primary.main", fontSize: 32 }} />
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <HistoryEdu sx={{ color: "primary.main", fontSize: 28 }} />
             <Box>
               <Typography
                 variant="caption"
                 sx={{
+                  fontWeight: 700,
                   color: "text.secondary",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
                 }}
               >
-                PrepFlow Assessment
+                PREPFLOW ASSESSMENT
               </Typography>
               <Typography
                 variant="h6"
-                sx={{ fontWeight: 800, color: "text.primary", lineHeight: 1 }}
+                sx={{ fontWeight: 500, lineHeight: 1.2 }}
               >
                 {topic}
               </Typography>
@@ -161,36 +276,37 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
           </IconButton>
         </Box>
 
-        <Container maxWidth="md" sx={{ py: 4 }}>
+        <Container maxWidth="sm" sx={{ py: 6 }}>
           {!isFinished ? (
             <Box>
-              {/* PROGRESS BAR & TIMER */}
               <Stack
                 direction="row"
                 justifyContent="space-between"
                 alignItems="center"
-                sx={{ mb: 2 }}
+                sx={{ mb: 3 }}
               >
                 <Chip
-                  label={`Q${currentIdx + 1} / ${questions.length}`}
+                  label={`${currentIdx + 1} / ${questions.length}`}
+                  size="small"
                   sx={{
-                    fontWeight: 900,
-                    bgcolor: "text.primary",
-                    color: "white",
+                    fontWeight: 600,
+                    bgcolor: alpha(theme.palette.text.primary, 0.05),
                   }}
                 />
                 <Stack
                   direction="row"
                   spacing={1}
                   alignItems="center"
-                  sx={{ color: timeLeft <= 10 ? "error.main" : "primary.main" }}
+                  sx={{
+                    color: timeLeft <= 10 ? "error.main" : "text.secondary",
+                  }}
                 >
-                  <Timer className={timeLeft <= 10 ? "pulse-animation" : ""} />
+                  <Timer sx={{ fontSize: 20 }} />
                   <Typography
                     sx={{
-                      fontWeight: 900,
+                      fontWeight: 700,
                       fontFamily: "monospace",
-                      fontSize: "1.2rem",
+                      fontSize: "1rem",
                     }}
                   >
                     0:{timeLeft.toString().padStart(2, "0")}
@@ -202,284 +318,168 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
                 variant="determinate"
                 value={((currentIdx + 1) / questions.length) * 100}
                 sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  mb: 4,
+                  height: 6,
+                  borderRadius: 3,
+                  mb: 5,
                   bgcolor: alpha(theme.palette.primary.main, 0.1),
                 }}
               />
 
-              {/* QUESTION CARD */}
-              <Paper
-                sx={{
-                  p: { xs: 3, md: 5 },
-                  borderRadius: "32px",
-                  border: "1px solid #E2E8F0",
-                  boxShadow: "0 10px 40px -10px rgba(0,0,0,0.05)",
-                }}
+              <Typography
+                variant="h5"
+                sx={{ mb: 4, fontWeight: 400, color: "text.primary" }}
               >
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: 600, mb: 4, color: "text.primary" }}
-                >
-                  <MarkdownRenderer content={currentQuestion?.question} />
-                </Typography>
+                <MarkdownRenderer content={currentQuestion?.question} />
+              </Typography>
 
-                <Stack spacing={2}>
-                  {currentQuestion?.options.map((option, i) => {
-                    const isCorrect = i === currentQuestion.correctAnswer;
-                    const isSelected = i === selectedAnswer;
-                    const isDisabled = selectedAnswer !== null;
+              <Stack spacing={1.5}>
+                {currentQuestion?.options.map((opt, i) => {
+                  const isCorrect = i === currentQuestion.correctAnswer;
+                  const isSelected = i === selectedAnswer;
+                  let state = "default";
+                  if (isSelected) state = isCorrect ? "success" : "error";
+                  else if (selectedAnswer !== null && isCorrect)
+                    state = "success";
 
-                    // State-based Styling
-                    const stateColor = isSelected
-                      ? isCorrect
-                        ? "success"
-                        : "error"
-                      : isCorrect && isDisabled
-                        ? "success"
-                        : "default";
+                  return (
+                    <OptionButton
+                      key={i}
+                      index={i}
+                      label={opt}
+                      state={state}
+                      disabled={selectedAnswer !== null}
+                      onClick={handleSelect}
+                    />
+                  );
+                })}
+              </Stack>
 
-                    return (
-                      <Button
-                        key={i}
-                        fullWidth
-                        onClick={() => handleSelect(i)}
-                        disabled={isDisabled}
-                        sx={{
-                          p: 3,
-                          borderRadius: "20px",
-                          justifyContent: "flex-start",
-                          textTransform: "none",
-                          border: "2px solid",
-                          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                          borderColor:
-                            stateColor === "success"
-                              ? "success.main"
-                              : stateColor === "error"
-                                ? "error.main"
-                                : "#E2E8F0",
-                          bgcolor:
-                            stateColor === "success"
-                              ? alpha(theme.palette.success.main, 0.05)
-                              : stateColor === "error"
-                                ? alpha(theme.palette.error.main, 0.05)
-                                : "white",
-                          "&:hover": {
-                            bgcolor: "#F8FAFC",
-                            borderColor: "primary.main",
-                            transform: "translateY(-2px)",
-                          },
-                          "&.Mui-disabled": {
-                            color: "text.primary",
-                            opacity: 1,
-                          },
-                        }}
-                      >
-                        <Stack
-                          direction="row"
-                          spacing={2}
-                          alignItems="center"
-                          sx={{ width: "100%" }}
-                        >
-                          <Box
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: "50%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontWeight: 800,
-                              bgcolor:
-                                stateColor === "success"
-                                  ? "success.main"
-                                  : stateColor === "error"
-                                    ? "error.main"
-                                    : "#F1F5F9",
-                              color:
-                                stateColor !== "default"
-                                  ? "white"
-                                  : "text.secondary",
-                            }}
-                          >
-                            {isSelected ? (
-                              isCorrect ? (
-                                <CheckCircle fontSize="small" />
-                              ) : (
-                                <Cancel fontSize="small" />
-                              )
-                            ) : (
-                              String.fromCharCode(65 + i)
-                            )}
-                          </Box>
-                          <MarkdownRenderer content={option} />
-                        </Stack>
-                      </Button>
-                    );
-                  })}
-                </Stack>
-
-                {selectedAnswer !== null && (
+              {selectedAnswer !== null && (
+                <Zoom in>
                   <Button
                     fullWidth
                     variant="contained"
                     onClick={handleNext}
                     endIcon={<ArrowForward />}
-                    sx={{
-                      mt: 4,
-                      py: 2,
-                      borderRadius: "16px",
-                      fontWeight: 800,
-                      fontSize: "1.1rem",
-                      boxShadow: theme.shadows[4],
-                    }}
+                    sx={{ mt: 4, py: 1.8 }}
                   >
                     {currentIdx < questions.length - 1
-                      ? "Next Challenge"
-                      : "See My Results"}
+                      ? "Next Question"
+                      : "View Results"}
                   </Button>
-                )}
-              </Paper>
+                </Zoom>
+              )}
             </Box>
           ) : (
-            /* RESULTS & REVIEW SECTION */
-            <Box>
-              {showReview ? (
-                <Zoom in>
+            /* Results View */
+            <Zoom in>
+              <Box>
+                {showReview ? (
                   <Box>
                     <Button
                       startIcon={<Replay />}
-                      onClick={() => setShowReview(false)}
-                      sx={{ mb: 3, fontWeight: 700 }}
+                      onClick={() =>
+                        setGameState((p) => ({ ...p, showReview: false }))
+                      }
+                      sx={{ mb: 3 }}
                     >
                       Back to Summary
                     </Button>
-                    {questions.map((q, qIdx) => (
+                    {questions.map((q, idx) => (
                       <Paper
-                        key={qIdx}
+                        key={idx}
                         sx={{
-                          p: 4,
-                          mb: 3,
-                          borderRadius: "24px",
-                          border: "1px solid #E2E8F0",
-                          position: "relative",
-                          overflow: "hidden",
+                          p: 3,
+                          mb: 2,
+                          border: `1px solid ${theme.palette.divider}`,
                         }}
                       >
-                        {/* Status Ribbon */}
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "6px",
-                            height: "100%",
-                            bgcolor:
-                              userChoices[qIdx] === q.correctAnswer
-                                ? "success.main"
-                                : "error.main",
-                          }}
-                        />
-
                         <Typography
-                          variant="subtitle2"
-                          sx={{ color: "text.secondary", mb: 1 }}
+                          variant="caption"
+                          sx={{ color: "primary.main", fontWeight: 700 }}
                         >
-                          QUESTION {qIdx + 1}
+                          QUESTION {idx + 1}
                         </Typography>
                         <Typography
-                          variant="h6"
-                          sx={{ mb: 3, fontWeight: 600 }}
+                          variant="subtitle1"
+                          sx={{ my: 1, fontWeight: 500 }}
                         >
                           <MarkdownRenderer content={q.question} />
                         </Typography>
-
                         <Box
                           sx={{
                             p: 2,
-                            bgcolor: alpha(theme.palette.primary.main, 0.05),
-                            borderRadius: "12px",
-                            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            borderRadius: 2,
+                            mt: 2,
                           }}
                         >
                           <Stack
                             direction="row"
                             spacing={1}
-                            sx={{ color: "primary.main", mb: 1 }}
+                            sx={{ color: "primary.main", mb: 0.5 }}
                           >
-                            <LightbulbCircle />
+                            <LightbulbCircle sx={{ fontSize: 20 }} />
                             <Typography
-                              variant="subtitle2"
-                              sx={{ fontWeight: 800 }}
+                              variant="caption"
+                              sx={{ fontWeight: 700 }}
                             >
-                              CONCEPT EXPLANATION
+                              EXPLANATION
                             </Typography>
                           </Stack>
-                          <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "text.secondary" }}
+                          >
                             <MarkdownRenderer content={q.explanation} />
                           </Typography>
                         </Box>
                       </Paper>
                     ))}
                   </Box>
-                </Zoom>
-              ) : (
-                <Zoom in>
+                ) : (
                   <Paper
                     sx={{
-                      p: 8,
-                      borderRadius: "40px",
+                      p: 6,
                       textAlign: "center",
-                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.1)",
+                      border: `1px solid ${theme.palette.divider}`,
                     }}
                   >
                     <EmojiEvents
-                      sx={{ fontSize: 100, color: "#F59E0B", mb: 2 }}
+                      sx={{ fontSize: 64, color: "#F59E0B", mb: 2 }}
                     />
-                    <Typography variant="h2" sx={{ fontWeight: 900 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 500, mb: 1 }}>
                       {Math.round((score / questions.length) * 100)}%
                     </Typography>
                     <Typography
-                      variant="h6"
+                      variant="body1"
                       sx={{ color: "text.secondary", mb: 4 }}
                     >
-                      {score === questions.length
-                        ? "Perfect Score! You've mastered this topic."
-                        : `You answered ${score}/${questions.length} correctly.`}
+                      You scored {score} out of {questions.length}
                     </Typography>
-
-                    <Stack spacing={2} sx={{ maxWidth: 300, mx: "auto" }}>
+                    <Stack spacing={2} direction="column">
                       <Button
-                        fullWidth
                         variant="contained"
-                        onClick={() => setShowReview(true)}
-                        startIcon={<AssignmentTurnedIn />}
-                        sx={{ py: 2, borderRadius: "14px", fontWeight: 800 }}
+                        onClick={() =>
+                          setGameState((p) => ({ ...p, showReview: true }))
+                        }
                       >
-                        Review Performance
+                        Review Answers
                       </Button>
                       <Button
-                        fullWidth
-                        variant="outlined"
+                        variant="text"
                         onClick={resetExam}
-                        startIcon={<Replay />}
-                        sx={{ py: 2, borderRadius: "14px", fontWeight: 800 }}
+                        sx={{ color: "text.secondary" }}
                       >
-                        Retake Assessment
+                        Try Again
                       </Button>
                     </Stack>
                   </Paper>
-                </Zoom>
-              )}
-            </Box>
+                )}
+              </Box>
+            </Zoom>
           )}
         </Container>
-
-        <style>{`
-          @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-          .pulse-animation { animation: pulse-red 1s infinite; }
-        `}</style>
       </Box>
     </Fade>
   );
