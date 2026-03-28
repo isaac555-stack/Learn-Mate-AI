@@ -13,6 +13,7 @@ import {
   Fade,
   Chip,
   useTheme,
+  Dialog,
 } from "@mui/material";
 import {
   Close,
@@ -219,256 +220,241 @@ const QuizModal = ({ open, onClose, topic, questions = [] }) => {
   if (!open || !questions.length) return null;
 
   return (
-    <Fade in={open}>
+    <Dialog fullScreen open={open} onClose={onClose} TransitionComponent={Fade}>
+      {/* Sticky Header */}
       <Box
         sx={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 9999,
+          p: 2,
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: `1px solid ${theme.palette.divider}`,
           bgcolor: "background.default",
-          overflowY: "auto",
         }}
       >
-        {/* Sticky Header */}
-        <Box
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <HistoryEdu sx={{ color: "primary.main", fontSize: 28 }} />
+          <Box>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                color: "text.secondary",
+                letterSpacing: 0.5,
+              }}
+            >
+              PREPFLOW ASSESSMENT
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+              {topic}
+            </Typography>
+          </Box>
+        </Stack>
+        <IconButton
+          onClick={onClose}
           sx={{
-            p: 2,
-            position: "sticky",
-            top: 0,
-            zIndex: 10,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            bgcolor: "background.default",
+            bgcolor: alpha(theme.palette.error.main, 0.05),
+            color: "error.main",
           }}
         >
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <HistoryEdu sx={{ color: "primary.main", fontSize: 28 }} />
-            <Box>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 700,
-                  color: "text.secondary",
-                  letterSpacing: 0.5,
-                }}
-              >
-                PREPFLOW ASSESSMENT
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 500, lineHeight: 1.2 }}
-              >
-                {topic}
-              </Typography>
-            </Box>
-          </Stack>
-          <IconButton
-            onClick={onClose}
-            sx={{
-              bgcolor: alpha(theme.palette.error.main, 0.05),
-              color: "error.main",
-            }}
-          >
-            <Close />
-          </IconButton>
-        </Box>
+          <Close />
+        </IconButton>
+      </Box>
 
-        <Container maxWidth="sm" sx={{ py: 6 }}>
-          {!isFinished ? (
-            <Box>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 3 }}
-              >
-                <Chip
-                  label={`${currentIdx + 1} / ${questions.length}`}
-                  size="small"
-                  sx={{
-                    fontWeight: 600,
-                    bgcolor: alpha(theme.palette.text.primary, 0.05),
-                  }}
-                />
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  sx={{
-                    color: timeLeft <= 10 ? "error.main" : "text.secondary",
-                  }}
-                >
-                  <Timer sx={{ fontSize: 20 }} />
-                  <Typography
-                    sx={{
-                      fontWeight: 700,
-                      fontFamily: "monospace",
-                      fontSize: "1rem",
-                    }}
-                  >
-                    0:{timeLeft.toString().padStart(2, "0")}
-                  </Typography>
-                </Stack>
-              </Stack>
-
-              <LinearProgress
-                variant="determinate"
-                value={((currentIdx + 1) / questions.length) * 100}
+      <Container maxWidth="sm" sx={{ py: 6 }}>
+        {!isFinished ? (
+          <Box>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mb: 3 }}
+            >
+              <Chip
+                label={`${currentIdx + 1} / ${questions.length}`}
+                size="small"
                 sx={{
-                  height: 6,
-                  borderRadius: 3,
-                  mb: 5,
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  fontWeight: 600,
+                  bgcolor: alpha(theme.palette.text.primary, 0.05),
                 }}
               />
-
-              <MarkdownRenderer content={currentQuestion?.question} />
-
-              <Stack spacing={1.5} mt={3}>
-                {currentQuestion?.options.map((opt, i) => {
-                  const isCorrect = i === currentQuestion.correctAnswer;
-                  const isSelected = i === selectedAnswer;
-                  let state = "default";
-                  if (isSelected) state = isCorrect ? "success" : "error";
-                  else if (selectedAnswer !== null && isCorrect)
-                    state = "success";
-
-                  return (
-                    <OptionButton
-                      key={i}
-                      index={i}
-                      label={opt}
-                      state={state}
-                      disabled={selectedAnswer !== null}
-                      onClick={handleSelect}
-                    />
-                  );
-                })}
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{
+                  color: timeLeft <= 10 ? "error.main" : "text.secondary",
+                }}
+              >
+                <Timer sx={{ fontSize: 20 }} />
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    fontFamily: "monospace",
+                    fontSize: "1rem",
+                  }}
+                >
+                  0:{timeLeft.toString().padStart(2, "0")}
+                </Typography>
               </Stack>
+            </Stack>
 
-              {selectedAnswer !== null && (
-                <Zoom in>
+            <LinearProgress
+              variant="determinate"
+              value={((currentIdx + 1) / questions.length) * 100}
+              sx={{
+                height: 6,
+                borderRadius: 3,
+                mb: 5,
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+              }}
+            />
+
+            <MarkdownRenderer content={currentQuestion?.question} />
+
+            <Stack spacing={1.5} mt={3}>
+              {currentQuestion?.options.map((opt, i) => {
+                const isCorrect = i === currentQuestion.correctAnswer;
+                const isSelected = i === selectedAnswer;
+                let state = "default";
+                if (isSelected) state = isCorrect ? "success" : "error";
+                else if (selectedAnswer !== null && isCorrect)
+                  state = "success";
+
+                return (
+                  <OptionButton
+                    key={i}
+                    index={i}
+                    label={opt}
+                    state={state}
+                    disabled={selectedAnswer !== null}
+                    onClick={handleSelect}
+                  />
+                );
+              })}
+            </Stack>
+
+            {selectedAnswer !== null && (
+              <Zoom in>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={handleNext}
+                  endIcon={<ArrowForward />}
+                  sx={{ mt: 4, py: 1.8 }}
+                >
+                  {currentIdx < questions.length - 1
+                    ? "Next Question"
+                    : "View Results"}
+                </Button>
+              </Zoom>
+            )}
+          </Box>
+        ) : (
+          /* Results View */
+          <Zoom in>
+            <Box>
+              {showReview ? (
+                <Box>
                   <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleNext}
-                    endIcon={<ArrowForward />}
-                    sx={{ mt: 4, py: 1.8 }}
+                    startIcon={<Replay />}
+                    onClick={() =>
+                      setGameState((p) => ({ ...p, showReview: false }))
+                    }
+                    sx={{ mb: 3 }}
                   >
-                    {currentIdx < questions.length - 1
-                      ? "Next Question"
-                      : "View Results"}
+                    Back to Summary
                   </Button>
-                </Zoom>
-              )}
-            </Box>
-          ) : (
-            /* Results View */
-            <Zoom in>
-              <Box>
-                {showReview ? (
-                  <Box>
-                    <Button
-                      startIcon={<Replay />}
-                      onClick={() =>
-                        setGameState((p) => ({ ...p, showReview: false }))
-                      }
-                      sx={{ mb: 3 }}
+                  {questions.map((q, idx) => (
+                    <Paper
+                      key={idx}
+                      sx={{
+                        p: 3,
+                        mb: 2,
+                        border: `1px solid ${theme.palette.divider}`,
+                      }}
                     >
-                      Back to Summary
-                    </Button>
-                    {questions.map((q, idx) => (
-                      <Paper
-                        key={idx}
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "primary.main", fontWeight: 700 }}
+                      >
+                        QUESTION {idx + 1}
+                      </Typography>
+
+                      <MarkdownRenderer content={q.question} />
+
+                      <Box
                         sx={{
-                          p: 3,
-                          mb: 2,
-                          border: `1px solid ${theme.palette.divider}`,
+                          p: 2,
+                          bgcolor: alpha(theme.palette.primary.main, 0.04),
+                          borderRadius: 2,
+                          mt: 2,
                         }}
                       >
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "primary.main", fontWeight: 700 }}
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          sx={{ color: "primary.main", mb: 0.5 }}
                         >
-                          QUESTION {idx + 1}
-                        </Typography>
-
-                        <MarkdownRenderer content={q.question} />
-
-                        <Box
-                          sx={{
-                            p: 2,
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                            borderRadius: 2,
-                            mt: 2,
-                          }}
-                        >
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ color: "primary.main", mb: 0.5 }}
+                          <LightbulbCircle sx={{ fontSize: 20 }} />
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 700 }}
                           >
-                            <LightbulbCircle sx={{ fontSize: 20 }} />
-                            <Typography
-                              variant="caption"
-                              sx={{ fontWeight: 700 }}
-                            >
-                              EXPLANATION
-                            </Typography>
-                          </Stack>
+                            EXPLANATION
+                          </Typography>
+                        </Stack>
 
-                          <MarkdownRenderer content={q.explanation} />
-                        </Box>
-                      </Paper>
-                    ))}
-                  </Box>
-                ) : (
-                  <Paper
-                    sx={{
-                      p: 6,
-                      textAlign: "center",
-                      border: `1px solid ${theme.palette.divider}`,
-                    }}
+                        <MarkdownRenderer content={q.explanation} />
+                      </Box>
+                    </Paper>
+                  ))}
+                </Box>
+              ) : (
+                <Paper
+                  sx={{
+                    p: 6,
+                    textAlign: "center",
+                    border: `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <EmojiEvents sx={{ fontSize: 64, color: "#F59E0B", mb: 2 }} />
+                  <Typography variant="h3" sx={{ fontWeight: 500, mb: 1 }}>
+                    {Math.round((score / questions.length) * 100)}%
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "text.secondary", mb: 4 }}
                   >
-                    <EmojiEvents
-                      sx={{ fontSize: 64, color: "#F59E0B", mb: 2 }}
-                    />
-                    <Typography variant="h3" sx={{ fontWeight: 500, mb: 1 }}>
-                      {Math.round((score / questions.length) * 100)}%
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{ color: "text.secondary", mb: 4 }}
+                    You scored {score} out of {questions.length}
+                  </Typography>
+                  <Stack spacing={2} direction="column">
+                    <Button
+                      variant="contained"
+                      onClick={() =>
+                        setGameState((p) => ({ ...p, showReview: true }))
+                      }
                     >
-                      You scored {score} out of {questions.length}
-                    </Typography>
-                    <Stack spacing={2} direction="column">
-                      <Button
-                        variant="contained"
-                        onClick={() =>
-                          setGameState((p) => ({ ...p, showReview: true }))
-                        }
-                      >
-                        Review Answers
-                      </Button>
-                      <Button
-                        variant="text"
-                        onClick={resetExam}
-                        sx={{ color: "text.secondary" }}
-                      >
-                        Try Again
-                      </Button>
-                    </Stack>
-                  </Paper>
-                )}
-              </Box>
-            </Zoom>
-          )}
-        </Container>
-      </Box>
-    </Fade>
+                      Review Answers
+                    </Button>
+                    <Button
+                      variant="text"
+                      onClick={resetExam}
+                      sx={{ color: "text.secondary" }}
+                    >
+                      Try Again
+                    </Button>
+                  </Stack>
+                </Paper>
+              )}
+            </Box>
+          </Zoom>
+        )}
+      </Container>
+    </Dialog>
   );
 };
 
