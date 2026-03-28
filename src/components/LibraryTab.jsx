@@ -269,7 +269,7 @@ const LibraryTab = ({
       </Box>
 
       {/* Notes Container */}
-      <Stack spacing={2.5} sx={{ mt: 3 }}>
+      <Stack spacing={2.0} sx={{ mt: 3 }}>
         {filteredNotes.map((note) => {
           const style = getSubjectStyle(theme, note.subject);
           return (
@@ -420,7 +420,7 @@ const LibraryTab = ({
             <AutoAwesome fontSize="small" sx={{ color: "#6366F1" }} />
           </ListItemIcon>
           <ListItemText
-            primary="AI Quiz"
+            primary="Generate Quiz"
             primaryTypographyProps={{ fontWeight: 600 }}
           />
         </MenuItem>
