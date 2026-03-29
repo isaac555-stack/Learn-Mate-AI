@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_KEY);
+const genAI = new GoogleGenerativeAI(import.meta.env.GEMINI_KEY);
 
 // Stable models for reliability
 const MAIN_MODEL = "gemini-2.5-flash";
@@ -89,6 +89,13 @@ export const processNotes = async (images, profile = {}) => {
           - Use 💡, 🎯, and ⚠️ emojis to highlight critical exam insights.
           - Use LaTeX for ALL mathematical or scientific formulas (e.g., $E = mc^2$).
           
+        - If the topic involves a cycle, process, or hierarchy, EXPLICITLY include a Mermaid diagram.
+         MERMAID RULES:
+          1. Always start with 'graph TD' or 'flowchart TD'.
+          2. Do NOT use comments (%%) inside the mermaid block.
+          3. Always use double quotes for labels with special characters: e.g., A["Energy (kJ)"].
+          4. Ensure every opening bracket [ has a matching closing bracket ].
+  
           SAFETY:
           - If images are non-academic, provide a friendly mentor response.`,
           },
@@ -178,7 +185,14 @@ export const explainFurther = async (
           - Explain "Why" before "What". 
           - Use West African scaffolding (relatable local examples).
           - Focus on WAEC/JAMB application.
-          - Use LaTeX for all formulas (e.g., $F = ma$).`,
+          - Explain concepts using text AND Mermaid.js diagrams where visuals help (e.g., flowcharts, sequence diagrams).
+          - Use LaTeX for all formulas (e.g., $F = ma$).
+          MERMAID RULES:
+          1. Always start with 'graph TD' or 'flowchart TD'.
+          2. Do NOT use comments (%%) inside the mermaid block.
+          3. Always use double quotes for labels with special characters: e.g., A["Energy (kJ)"].
+          4. Ensure every opening bracket [ has a matching closing bracket ].
+  `,
           },
         ],
       },
@@ -194,6 +208,7 @@ export const explainFurther = async (
     `;
 
     const result = await model.generateContent(prompt);
+
     return result.response.text().trim();
   } catch (e) {
     console.error("Explanation Error:", e);
