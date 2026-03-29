@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(import.meta.env.GEMINI_KEY);
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_KEY);
 
 // Stable models for reliability
 const MAIN_MODEL = "gemini-2.5-flash";
