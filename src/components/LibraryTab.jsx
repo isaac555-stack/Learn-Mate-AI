@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Typography,
   Paper,
@@ -28,37 +28,34 @@ import {
 import {
   DeleteOutline,
   Science,
-  Book,
   Calculate,
   Search,
   Clear,
-  PlayArrow,
   AutoAwesome,
   AutoFixHigh,
-  CloudDone,
-  CloudOff,
   AccessTime,
   MoreVert,
-  MenuBook,
   Sync,
   Psychology,
   HistoryEdu,
   Draw,
 } from "@mui/icons-material";
 
-// Enhanced Subject Mapping with Gemini Palette
+// Helper for normalized subject styling
 const getSubjectStyle = (theme, subject = "General") => {
   const isDark = theme.palette.mode === "dark";
+  const normalizedSubject = subject?.trim().toLowerCase() || "general";
+
   const map = {
-    Biology: { color: "#34A853", icon: <Science fontSize="small" /> },
-    Physics: { color: "#4285F4", icon: <Psychology fontSize="small" /> },
-    Mathematics: { color: "#FBBC04", icon: <Calculate fontSize="small" /> },
-    Chemistry: { color: "#A142F4", icon: <AutoFixHigh fontSize="small" /> },
-    English: { color: "#EA4335", icon: <HistoryEdu fontSize="small" /> },
-    Art: { color: "#F06292", icon: <Draw fontSize="small" /> },
+    biology: { color: "#34A853", icon: <Science fontSize="small" /> },
+    physics: { color: "#4285F4", icon: <Psychology fontSize="small" /> },
+    mathematics: { color: "#FBBC04", icon: <Calculate fontSize="small" /> },
+    chemistry: { color: "#A142F4", icon: <AutoFixHigh fontSize="small" /> },
+    english: { color: "#EA4335", icon: <HistoryEdu fontSize="small" /> },
+    art: { color: "#F06292", icon: <Draw fontSize="small" /> },
   };
 
-  const choice = map[subject] || {
+  const choice = map[normalizedSubject] || {
     color: theme.palette.primary.main,
     icon: <AutoAwesome fontSize="small" />,
   };
@@ -82,7 +79,7 @@ const LibraryTab = ({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
-  // States
+  // State Management
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
@@ -92,77 +89,63 @@ const LibraryTab = ({
   const [questionCount, setQuestionCount] = useState(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Memoized Subjects
+  // Memoized derived data
   const subjects = useMemo(
     () => ["All", ...new Set(savedNotes.map((n) => n.subject).filter(Boolean))],
     [savedNotes],
   );
 
-  const filteredNotes = savedNotes.filter((note) => {
-    const matchesFilter = filter === "All" || note.subject === filter;
-    const query = searchQuery.toLowerCase();
-    return (
-      matchesFilter &&
-      (note.title?.toLowerCase().includes(query) ||
-        note.subject?.toLowerCase().includes(query))
-    );
-  });
+  const filteredNotes = useMemo(() => {
+    return savedNotes.filter((note) => {
+      const matchesFilter = filter === "All" || note.subject === filter;
+      const query = searchQuery.toLowerCase();
+      return (
+        matchesFilter &&
+        (note.title?.toLowerCase().includes(query) ||
+          note.subject?.toLowerCase().includes(query))
+      );
+    });
+  }, [savedNotes, filter, searchQuery]);
 
+  // Handlers
   const handleRefresh = async () => {
-    if (!refreshNotes) return;
+    if (isRefreshing || !refreshNotes) return;
     setIsRefreshing(true);
     await refreshNotes();
-    setTimeout(() => setIsRefreshing(false), 1000);
+    setIsRefreshing(false);
   };
 
-  /**
-   * Refactored: Opens a note and hydrates all necessary session state
-   */
   const handleOpenNote = (note) => {
     if (note.isSyncing) return;
-
-    // 1. Load the text content
+    setSelectedNote(note); // Ensure state is hydrated
     setSummary(note.content);
-
-    // 2. Load the Supabase UUID so Deep Dives know which row to update
     setScanSessionId(note.id);
-
-    // 3. Load metadata so the ControlBar and AI have context
     setMetadata({
       title: note.title,
       subject: note.subject,
       topic: note.topic,
     });
-
-    // 4. Switch to the Scanner/Viewer tab
     setTab(0);
   };
 
-  const handleMenuOpen = (e, note) => {
-    e.stopPropagation();
-    setAnchorEl(e.currentTarget);
+  const handleMenuAction = (action, note) => {
     setSelectedNote(note);
+    setAnchorEl(null);
+    if (action === "quiz") setSetupOpen(true);
+    if (action === "delete") setDeleteConfirmOpen(true);
   };
 
-  const handleMenuClose = () => setAnchorEl(null);
-  const triggerQuizSetup = () => {
-    handleMenuClose();
-    setSetupOpen(true);
-  };
-  const triggerDeleteConfirm = () => {
-    handleMenuClose();
-    setDeleteConfirmOpen(true);
-  };
-
-  const confirmDelete = () => {
-    deleteNote(selectedNote.id);
-    setDeleteConfirmOpen(false);
-    setSelectedNote(null);
+  const onConfirmDelete = () => {
+    if (selectedNote) {
+      deleteNote(selectedNote.id);
+      setDeleteConfirmOpen(false);
+      setSelectedNote(null);
+    }
   };
 
   return (
     <Box sx={{ pb: 10, mt: 1 }}>
-      {/* Sticky Glassmorphism Header */}
+      {/* Search & Sync Header */}
       <Box
         sx={{
           position: "sticky",
@@ -178,7 +161,7 @@ const LibraryTab = ({
           <Paper
             elevation={0}
             sx={{
-              p: "4px 8px",
+              p: "4px 12px",
               borderRadius: "100px",
               border: `1px solid ${theme.palette.divider}`,
               display: "flex",
@@ -192,13 +175,13 @@ const LibraryTab = ({
             <TextField
               fullWidth
               variant="standard"
-              placeholder="Search library..."
+              placeholder="Search your library..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
                 disableUnderline: true,
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ pl: 1.5 }}>
+                  <InputAdornment position="start">
                     <Search sx={{ color: "text.secondary", fontSize: 20 }} />
                   </InputAdornment>
                 ),
@@ -210,12 +193,13 @@ const LibraryTab = ({
               }}
             />
           </Paper>
-          <Tooltip title="Sync">
+          <Tooltip title="Refresh Library">
             <IconButton
               onClick={handleRefresh}
               sx={{
                 border: `1px solid ${theme.palette.divider}`,
                 borderRadius: "16px",
+                p: 1.5,
               }}
             >
               <Sync
@@ -256,40 +240,34 @@ const LibraryTab = ({
                   filter === subj
                     ? "none"
                     : `1px solid ${theme.palette.divider}`,
-                "&:hover": {
-                  bgcolor:
-                    filter === subj
-                      ? "text.primary"
-                      : alpha(theme.palette.divider, 0.1),
-                },
               }}
             />
           ))}
         </Stack>
       </Box>
 
-      {/* Notes Container */}
-      <Stack spacing={2.0} sx={{ mt: 3 }}>
+      {/* Notes List */}
+      <Stack spacing={2} sx={{ mt: 3 }}>
         {filteredNotes.map((note) => {
           const style = getSubjectStyle(theme, note.subject);
           return (
             <Fade in key={note.id}>
               <Paper
                 elevation={0}
-                onClick={() => !note.isSyncing && handleOpenNote(note)}
+                onClick={() => handleOpenNote(note)}
                 sx={{
-                  p: 2.5,
+                  p: 2,
                   borderRadius: "24px",
                   bgcolor: isDark ? "#1E1F20" : "#fff",
                   border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
                   cursor: note.isSyncing ? "default" : "pointer",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   display: "flex",
                   alignItems: "center",
+                  transition: "all 0.2s ease-in-out",
                   "&:hover": {
                     borderColor: style.color,
-                    boxShadow: `0 8px 24px ${alpha(style.color, isDark ? 0.2 : 0.1)}`,
                     transform: "translateY(-2px)",
+                    boxShadow: `0 8px 20px ${alpha(style.color, 0.1)}`,
                   },
                 }}
               >
@@ -297,60 +275,44 @@ const LibraryTab = ({
                   sx={{
                     bgcolor: style.bg,
                     color: style.color,
-                    width: 56,
-                    height: 56,
-                    borderRadius: "16px",
-                    mr: 2.5,
+                    width: 50,
+                    height: 50,
+                    borderRadius: "14px",
+                    mr: 2,
                   }}
                 >
                   {style.icon}
                 </Avatar>
-
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                   <Typography
                     variant="subtitle1"
                     noWrap
-                    sx={{
-                      fontWeight: 800,
-
-                      fontSize: "0.95rem",
-                    }}
+                    sx={{ fontWeight: 700 }}
                   >
                     {note.title}
                   </Typography>
-
                   <Stack
                     direction="row"
-                    spacing={1.5}
+                    spacing={1}
                     alignItems="center"
                     sx={{ mt: 0.5 }}
                   >
                     <Typography
                       variant="caption"
-                      noWrap
                       sx={{
-                        fontWeight: 800,
+                        fontWeight: 700,
                         color: style.color,
                         bgcolor: alpha(style.color, 0.1),
                         px: 1,
-                        borderRadius: "6px",
-                        maxWidth: "100px",
-                        display: "block",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        borderRadius: "4px",
                       }}
                     >
                       {note.subject || "General"}
                     </Typography>
-
                     <Typography
                       variant="caption"
-                      sx={{
-                        color: "text.secondary",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                      }}
+                      color="text.secondary"
+                      sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                     >
                       <AccessTime sx={{ fontSize: 12 }} />
                       {note.created_at
@@ -359,19 +321,19 @@ const LibraryTab = ({
                     </Typography>
                   </Stack>
                 </Box>
-
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  {note.isSyncing ? (
-                    <CircularProgress size={20} sx={{ color: style.color }} />
-                  ) : (
-                    <IconButton
-                      onClick={(e) => handleMenuOpen(e, note)}
-                      sx={{ color: "text.secondary" }}
-                    >
-                      <MoreVert />
-                    </IconButton>
-                  )}
-                </Stack>
+                {note.isSyncing ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAnchorEl(e.currentTarget);
+                      setSelectedNote(note);
+                    }}
+                  >
+                    <MoreVert />
+                  </IconButton>
+                )}
               </Paper>
             </Fade>
           );
@@ -380,79 +342,46 @@ const LibraryTab = ({
 
       {/* Empty State */}
       {filteredNotes.length === 0 && (
-        <Box sx={{ textAlign: "center", py: 15 }}>
-          <AutoAwesome
-            sx={{ fontSize: 60, mb: 2, color: "primary.main", opacity: 0.2 }}
-          />
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{ fontWeight: 600 }}
-          >
-            Your library is clear
-          </Typography>
-          <Typography variant="body2" color="text.disabled">
-            No notes match your current filters.
-          </Typography>
+        <Box sx={{ textAlign: "center", py: 10, opacity: 0.5 }}>
+          <AutoAwesome sx={{ fontSize: 48, mb: 1 }} />
+          <Typography variant="h6">Nothing here yet</Typography>
         </Box>
       )}
 
-      {/* Action Menu */}
+      {/* Menus & Dialogs */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={() => setAnchorEl(null)}
-        PaperProps={{
-          sx: {
-            borderRadius: "16px",
-            minWidth: 180,
-            boxShadow: theme.shadows[10],
-          },
-        }}
+        PaperProps={{ sx: { borderRadius: "16px", minWidth: 160 } }}
       >
-        <MenuItem
-          onClick={() => {
-            setAnchorEl(null);
-            setSetupOpen(true);
-          }}
-        >
+        <MenuItem onClick={() => handleMenuAction("quiz", selectedNote)}>
           <ListItemIcon>
-            <AutoAwesome fontSize="small" sx={{ color: "#6366F1" }} />
+            <AutoAwesome fontSize="small" color="primary" />
           </ListItemIcon>
-          <ListItemText
-            primary="Generate Quiz"
-            primaryTypographyProps={{ fontWeight: 600 }}
-          />
+          <ListItemText primary="Generate Quiz" />
         </MenuItem>
         <MenuItem
-          onClick={() => {
-            setAnchorEl(null);
-            setDeleteConfirmOpen(true);
-          }}
+          onClick={() => handleMenuAction("delete", selectedNote)}
           sx={{ color: "error.main" }}
         >
           <ListItemIcon>
             <DeleteOutline fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText
-            primary="Delete"
-            primaryTypographyProps={{ fontWeight: 600 }}
-          />
+          <ListItemText primary="Delete Note" />
         </MenuItem>
       </Menu>
 
-      {/* Gemini Style Dialogs */}
+      {/* Quiz Dialog */}
       <Dialog
         open={setupOpen}
         onClose={() => setSetupOpen(false)}
-        PaperProps={{ sx: { borderRadius: "28px", p: 1, maxWidth: 320 } }}
+        PaperProps={{ sx: { borderRadius: "28px", p: 1 } }}
       >
-        <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
-          Configure Quiz
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>Quiz Settings</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            How many questions should the AI generate for this session?
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Select the number of questions:
           </Typography>
           <Stack direction="row" spacing={1}>
             {[5, 10, 15].map((n) => (
@@ -461,7 +390,7 @@ const LibraryTab = ({
                 fullWidth
                 variant={questionCount === n ? "contained" : "outlined"}
                 onClick={() => setQuestionCount(n)}
-                sx={{ borderRadius: "12px", py: 1.5 }}
+                sx={{ borderRadius: "12px" }}
               >
                 {n}
               </Button>
@@ -473,10 +402,39 @@ const LibraryTab = ({
             fullWidth
             variant="contained"
             size="large"
-            onClick={() => handleLaunchQuiz(selectedNote, questionCount)}
+            onClick={() => {
+              setSetupOpen(false);
+              handleLaunchQuiz(selectedNote, questionCount);
+            }}
             sx={{ borderRadius: "100px" }}
           >
-            Start Quiz
+            Start Learning
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        PaperProps={{ sx: { borderRadius: "20px" } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Delete this note?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will permanently remove the study guide and all associated quiz
+            data.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+          <Button
+            onClick={onConfirmDelete}
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: "100px" }}
+          >
+            Delete Permanently
           </Button>
         </DialogActions>
       </Dialog>
