@@ -432,7 +432,7 @@ const LibraryTab = ({
             onClick={onConfirmDelete}
             variant="contained"
             color="error"
-            sx={{ borderRadius: "100px" }}
+            sx={{}}
           >
             Delete Permanently
           </Button>
