@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 export const supabase = createClient(
-  import.meta.env.SUPABASE_URL,
-  import.meta.env.SUPABASE_ANON_KEY,
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
   {
     auth: {
       navigatorLock: false, // This is the secret sauce to fix the AbortError
@@ -32,7 +32,7 @@ export const getQuestionsForSubject = async (subject) => {
     const response = await fetch(
       `https://questions.aloc.com.ng/api/v2/q?subject=${cleanSubject}`,
       {
-        headers: { AccessToken: import.meta.env.ALOC_TOKEN },
+        headers: { AccessToken: import.meta.env.VITE_ALOC_TOKEN },
       },
     );
 
