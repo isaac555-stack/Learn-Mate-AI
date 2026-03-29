@@ -32,7 +32,7 @@ export const getQuestionsForSubject = async (subject) => {
     const response = await fetch(
       `https://questions.aloc.com.ng/api/v2/q?subject=${cleanSubject}`,
       {
-        headers: { AccessToken: import.meta.env.VITE_ALOC_TOKEN },
+        headers: { AccessToken: import.meta.env.ALOC_TOKEN },
       },
     );
 
