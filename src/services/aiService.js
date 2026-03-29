@@ -7,7 +7,7 @@ const MAIN_MODEL = "gemini-2.5-flash";
 const LITE_MODEL = "gemini-2.5-flash-lite";
 
 /**
- * UTILITY: Compress base64 images to reduce payload size
+ * UTILITY: Compress base64 images to reduce payload
  */
 const compressImage = (base64Str, maxWidth = 1024, quality = 0.7) => {
   return new Promise((resolve) => {
