@@ -307,7 +307,8 @@ const LibraryTab = ({
                         borderRadius: "4px",
                       }}
                     >
-                      {note.subject || "General"}
+                      {note.subject.slice(0, 15) +
+                        (note.subject.length > 15 ? "..." : "") || "General"}
                     </Typography>
                     <Typography
                       variant="caption"
