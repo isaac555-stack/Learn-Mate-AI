@@ -13,11 +13,35 @@ import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
+import mermaid from "mermaid";
 
 const blink = keyframes`
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 `;
+
+mermaid.initialize({ startOnLoad: true });
+
+// 1. Move this OUTSIDE the main component
+const MermaidDiagram = ({ children }) => {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      // Clear the container and re-render
+      ref.current.removeAttribute("data-processed");
+      mermaid.contentLoaded();
+    }
+  }, [children]);
+
+  return (
+    <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+      <div className="mermaid" ref={ref}>
+        {String(children).replace(/\n$/, "")}
+      </div>
+    </Box>
+  );
+};
 
 const TypewriterEffect = ({ text, speed = 15 }) => {
   const theme = useTheme();
@@ -69,6 +93,19 @@ const TypewriterEffect = ({ text, speed = 15 }) => {
     clearExistingTimer();
     setDisplayedText(text);
     setIsFinished(true);
+  };
+
+  const MarkdownComponents = {
+    code({ node, inline, className, children, ...props }) {
+      const match = /language-mermaid/.exec(className || "");
+      return !inline && match ? (
+        <MermaidDiagram>{children}</MermaidDiagram>
+      ) : (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      );
+    },
   };
 
   return (
@@ -247,6 +284,7 @@ const TypewriterEffect = ({ text, speed = 15 }) => {
         <ReactMarkdown
           remarkPlugins={[remarkMath, remarkGfm]}
           rehypePlugins={[rehypeKatex]}
+          components={MarkdownComponents}
         >
           {displayedText}
         </ReactMarkdown>

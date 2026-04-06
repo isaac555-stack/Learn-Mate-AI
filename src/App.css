@@ -9,3 +9,30 @@ body {
 #root {
   width: 100%;
 }
+
+/* Add a soft glow to the boxes (nodes) */
+.mermaid .node rect {
+  rx: 10; /* Rounded corners */
+  ry: 10;
+  stroke-width: 1.5px;
+}
+
+/* Make the arrows (edges) smoother */
+.mermaid .edgePath path {
+  stroke-width: 2px;
+}
+
+/* Add this to your Box sx or global CSS */
+.mermaid {
+  width: 100%; /* Occupy full width of the parent container */
+  max-width: 1000px; /* Set a comfortable maximum limit */
+  margin: 0 auto; /* Center it */
+  display: flex;
+  justify-content: center;
+}
+
+.mermaid svg {
+  width: 100% !important; /* Force the SVG to scale up to the container */
+  height: auto !important; /* Maintain aspect ratio */
+  min-height: 300px; /* Ensure it's not too small vertically */
+}

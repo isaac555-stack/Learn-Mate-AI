@@ -16,6 +16,7 @@ import {
   AutoAwesome,
 } from "@mui/icons-material";
 import TypewriterEffect from "./TypewriterEffect";
+import MermaidDiagram from "./Mermaid";
 
 const SummaryView = ({
   summary,
