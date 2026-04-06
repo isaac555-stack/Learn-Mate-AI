@@ -8,12 +8,12 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
-        cleanupOutdatedCaches: true, // Automatically deletes old hashed files
+        cleanupOutdatedCaches: true,
         skipWaiting: true,
-        // 1. Clean up the "Cache.put" mess by deleting old versions
-
         navigateFallback: null,
         clientsClaim: true,
+        // Optional: Increase the limit slightly to 3MB as a safety net
+        maximumFileSizeToCacheInBytes: 3000000,
       },
       includeAssets: [
         "favicon.ico",
@@ -42,7 +42,6 @@ export default defineConfig({
             purpose: "any",
           },
           {
-            // THIS FIXES THE WHITE BOX
             src: "/PrepFlowMaskable512.png",
             sizes: "512x512",
             type: "image/png",
@@ -52,6 +51,26 @@ export default defineConfig({
       },
     }),
   ],
+  // --- ADDED THIS BUILD SECTION ---
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Grouping heavy AI and UI libs into their own files
+          "vendor-ai": ["@google/generative-ai", "@supabase/supabase-js"],
+          "vendor-ui": [
+            "@mui/material",
+            "@emotion/react",
+            "@emotion/styled",
+            "framer-motion",
+          ],
+          "vendor-charts": ["mermaid"],
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+        },
+      },
+    },
+  },
+  // --------------------------------
   server: {
     allowedHosts: true,
     host: true,
