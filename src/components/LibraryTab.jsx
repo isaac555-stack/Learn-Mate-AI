@@ -234,12 +234,24 @@ const LibraryTab = ({
               sx={{
                 fontWeight: 600,
                 borderRadius: "100px",
+                // Use variables to keep logic clean
                 bgcolor: filter === subj ? "text.primary" : "transparent",
                 color: filter === subj ? "background.paper" : "text.secondary",
                 border:
                   filter === subj
                     ? "none"
                     : `1px solid ${theme.palette.divider}`,
+
+                // Target the hover state to match the base state
+                "&:hover": {
+                  bgcolor: filter === subj ? "text.primary" : "transparent",
+                  opacity: 1, // Prevents the slight dimming effect
+                },
+
+                // If you want to remove the "flash" on mobile/click
+                "& .MuiTouchRipple-root": {
+                  display: "none",
+                },
               }}
             />
           ))}
