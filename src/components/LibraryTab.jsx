@@ -46,20 +46,66 @@ const getSubjectStyle = (theme, subject = "General") => {
   const isDark = theme.palette.mode === "dark";
   const normalizedSubject = subject?.trim().toLowerCase() || "general";
 
+  const LetterIcon = ({ letter, color }) => (
+    <Box
+      sx={{
+        width: 20,
+        height: 20,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "4px", // Slight roundness for a "tag" look
+        bgcolor: `${color}20`, // 20% opacity background of the subject color
+        border: `1px solid ${color}`,
+      }}
+    >
+      <Typography
+        sx={{
+          color: color,
+          fontSize: "0.75rem",
+          fontWeight: 800,
+          lineHeight: 1,
+          textTransform: "uppercase",
+        }}
+      >
+        {letter}
+      </Typography>
+    </Box>
+  );
+
   const map = {
-    biology: { color: "#34A853", icon: <Science fontSize="small" /> },
-    physics: { color: "#4285F4", icon: <Psychology fontSize="small" /> },
-    mathematics: { color: "#FBBC04", icon: <Calculate fontSize="small" /> },
-    chemistry: { color: "#A142F4", icon: <AutoFixHigh fontSize="small" /> },
-    english: { color: "#EA4335", icon: <HistoryEdu fontSize="small" /> },
-    art: { color: "#F06292", icon: <Draw fontSize="small" /> },
+    biology: {
+      color: "#81C784",
+      icon: <LetterIcon letter="B" color="#81C784" />,
+    },
+    physics: {
+      color: "#64B5F6",
+      icon: <LetterIcon letter="P" color="#64B5F6" />,
+    },
+    mathematics: {
+      color: "#FFD54F",
+      icon: <LetterIcon letter="M" color="#FFD54F" />,
+    },
+    chemistry: {
+      color: "#BA68C8",
+      icon: <LetterIcon letter="C" color="#BA68C8" />,
+    },
+    english: {
+      color: "#FF8A65",
+      icon: <LetterIcon letter="E" color="#FF8A65" />,
+    },
+    art: { color: "#F06292", icon: <LetterIcon letter="A" color="#F06292" /> },
   };
 
   const choice = map[normalizedSubject] || {
-    color: theme.palette.primary.main,
-    icon: <AutoAwesome fontSize="small" />,
+    color: "#90CAF9",
+    icon: (
+      <LetterIcon
+        letter={normalizedSubject?.charAt(0) || "N"}
+        color="#90CAF9"
+      />
+    ),
   };
-
   return {
     ...choice,
     bg: alpha(choice.color, isDark ? 0.15 : 0.1),
