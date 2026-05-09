@@ -55,8 +55,7 @@ const getSubjectStyle = (theme, subject = "General") => {
         alignItems: "center",
         justifyContent: "center",
         borderRadius: "4px", // Slight roundness for a "tag" look
-        bgcolor: `${color}20`, // 20% opacity background of the subject color
-        border: `1px solid ${color}`,
+        bgcolor: `${color}10`, // 20% opacity background of the subject color
       }}
     >
       <Typography
