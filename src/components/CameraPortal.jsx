@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Webcam from "react-webcam";
 import { Box, IconButton } from "@mui/material";
 import { Close, FlashOn, FlashOff } from "@mui/icons-material";
@@ -6,43 +6,24 @@ import { scanMove } from "../services/animation";
 
 const CameraPortal = ({ onClose, onCapture, webcamRef }) => {
   const [torchOn, setTorchOn] = useState(false);
-  const [supportsTorch, setSupportsTorch] = useState(false);
-
-  // Check if the hardware actually supports a flashlight
-  useEffect(() => {
-    const checkTorch = async () => {
-      try {
-        const stream = webcamRef.current?.video?.srcObject;
-        if (stream) {
-          const track = stream.getVideoTracks()[0];
-          const capabilities = track.getCapabilities();
-          if (capabilities.torch) {
-            setSupportsTorch(true);
-          }
-        }
-      } catch (err) {
-        console.log("Torch not supported on this device/browser");
-      }
-    };
-
-    // Wait a bit for webcam to initialize before checking hardware
-    const timeout = setTimeout(checkTorch, 1000);
-    return () => clearTimeout(timeout);
-  }, [webcamRef]);
 
   const toggleTorch = async () => {
-    try {
-      const stream = webcamRef.current?.video?.srcObject;
-      const track = stream.getVideoTracks()[0];
-      const newStatus = !torchOn;
+    const stream = webcamRef.current?.video?.srcObject;
+    if (!stream) return;
 
+    const track = stream.getVideoTracks()[0];
+
+    // We try/catch here because if the device doesn't have a torch,
+    // applyConstraints will simply throw an error.
+    try {
+      const newStatus = !torchOn;
       await track.applyConstraints({
         advanced: [{ torch: newStatus }],
       });
-
       setTorchOn(newStatus);
     } catch (err) {
-      console.error("Failed to toggle torch:", err);
+      console.warn("Torch toggle failed: Likely no hardware support.", err);
+      // Optional: You could show a small "Flash not available" Toast here
     }
   };
 
@@ -110,20 +91,17 @@ const CameraPortal = ({ onClose, onCapture, webcamRef }) => {
           <Close />
         </IconButton>
 
-        {/* Show Flash button only if hardware supports it */}
-        {supportsTorch && (
-          <IconButton
-            onClick={toggleTorch}
-            sx={{
-              bgcolor: torchOn ? "#6366F1" : "rgba(0,0,0,0.5)",
-              color: "#fff",
-              backdropFilter: "blur(10px)",
-              transition: "0.3s",
-            }}
-          >
-            {torchOn ? <FlashOn /> : <FlashOff />}
-          </IconButton>
-        )}
+        <IconButton
+          onClick={toggleTorch}
+          sx={{
+            bgcolor: torchOn ? "#6366F1" : "rgba(0,0,0,0.5)",
+            color: "#fff",
+            backdropFilter: "blur(10px)",
+            transition: "0.3s",
+          }}
+        >
+          {torchOn ? <FlashOn /> : <FlashOff />}
+        </IconButton>
       </Box>
 
       {/* Capture Button Container */}
